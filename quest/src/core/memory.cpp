@@ -437,6 +437,7 @@ bool mem_isOuterAllocated(qcomp*** ptr) { return isNonNull(ptr); }
 bool mem_isAllocated(int* heapflag)   { return isNonNull(heapflag); }
 bool mem_isAllocated(qcomp* array )   { return isNonNull(array); }
 bool mem_isAllocated(PauliStr* array) { return isNonNull(array); }
+bool mem_isAllocated(qindex* array)   { return isNonNull(array); }
 
 bool mem_isAllocated(qcomp** matrix, qindex numRows) {
 

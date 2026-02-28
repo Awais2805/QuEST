@@ -112,6 +112,7 @@ bool mem_canPauliStrSumFitInMemory(qindex numTerms, qindex numBytesPerNode);
 
 bool mem_isAllocated(int* heapflag);
 bool mem_isAllocated(PauliStr* array);
+bool mem_isAllocated(qindex* array);
 bool mem_isAllocated(qcomp* array);
 bool mem_isAllocated(qcomp** matrix, qindex numRows);
 bool mem_isAllocated(qcomp*** matrixList, qindex numRows, int numMatrices);

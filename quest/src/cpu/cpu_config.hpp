@@ -43,6 +43,8 @@ int cpu_getCurrentNumThreads();
  * MEMORY ALLOCATION
  */
 
+long cpu_getPageSize();
+
 qcomp* cpu_allocArray(qindex length);
 void cpu_deallocArray(qcomp* arr);
 
@@ -64,8 +66,9 @@ void cpu_deallocHeapFlag(int* ptr);
 PauliStr* cpu_allocPauliStrings(qindex numStrings);
 void cpu_deallocPauliStrings(PauliStr* strings);
 
+qindex* cpu_allocIndices(qindex length);
+void cpu_deallocIndices(qindex* indices);
 
-long cpu_getPageSize();
 
 
 /*

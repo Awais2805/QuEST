@@ -412,6 +412,16 @@ void cpu_deallocPauliStrings(PauliStr* strings) {
     free(strings);
 }
 
+qindex* cpu_allocIndices(qindex length) {
+    return (qindex*) calloc(length, sizeof(qindex));
+}
+
+void cpu_deallocIndices(qindex* indices) {
+
+    // safe to free if nullptr
+    free(indices);
+}
+
 
 
 /*

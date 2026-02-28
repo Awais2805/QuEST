@@ -109,14 +109,16 @@ extern "C" {
  * > These formulations are taken from 'Finding Exponential Product Formulas
  * > of Higher Orders', Naomichi Hatano and Masuo Suzuki (2005) (<a href="https://arxiv.org/abs/math-ph/0506007">arXiv</a>).
  * 
- * When @p permutePaulis=true the terms of @p sum are effected in a random order at each repetition. That is, each repetition of the Trotter-Suzuki decomposition is evaluated with the sum
+ * When @p permutePaulis=true, the terms of @p sum are effected in a random order at each repetition. 
+ * That is, each repetition of the Trotter-Suzuki decomposition is evaluated with the sum
  * @f[
       \hat{H} = \sum\limits_j^T c_{\pi(j)} \, \hat{\sigma}_{\pi(j)}
  * @f]
- * where @f$ \pi @f$  is a randomly selected permutation.
+ * where @f$ \pi @f$  is a randomly selected permutation. When @p permutePaulis=false, the fixed
+ * ordering @f$ \pi = @f$ @p sum.ordering is used.
  *
  * @important
- *   Using @p permutePaulis=true will cause @p sum to be mutated by the Trotterisation.
+ *   Using @p permutePaulis=true will mutate the ordering of @p sum (specifically @p sum.ordering).
  *
  * @equivalences
  * 
@@ -153,7 +155,8 @@ extern "C" {
  *   when all PauliStr in @p sum = @f$ \hat{H} @f$ commute, or @p reps @f$ \rightarrow \infty @f$.
  * 
  * @param[in,out] qureg                the state to modify.
- * @param[in]     sum                  a weighted sum of Pauli strings to approximately exponentiate.
+ * @param[in,out] sum                  a weighted sum of Pauli strings to approximately exponentiate,
+ *                                     with ordering mutated when @p permutePaulis=true.
  * @param[in]     angle                the prefactor of @p sum times @f$ i @f$ in the exponent.
  * @param[in]     order                the order of the Trotter-Suzuki decomposition (e.g. @p 1, @p 2, @p 4, ...).
  * @param[in]     reps                 the number of Trotter repetitions.
@@ -248,7 +251,8 @@ void applyTrotterizedMultiStateControlledPauliStrSumGadget(Qureg qureg, int* con
  *   when all PauliStr in @p sum = @f$ \hat{H} @f$ commute. 
  * 
  * @param[in,out] qureg                the state to modify.
- * @param[in]     sum                  a weighted sum of Pauli strings to approximately exponentiate.
+ * @param[in,out] sum                  a weighted sum of Pauli strings to approximately exponentiate,
+ *                                     with ordering mutated when @p permutePaulis=true.
  * @param[in]     angle                an effective prefactor of @p sum in the exponent.
  * @param[in]     order                the order of the Trotter-Suzuki decomposition (e.g. @p 1, @p 2, @p 4, ...).
  * @param[in]     reps                 the number of Trotter repetitions.
@@ -391,7 +395,8 @@ extern "C" {
  *  - applyTrotterizedNonUnitaryPauliStrSumGadget()
  * 
  * @param[in,out] qureg                the state to modify.
- * @param[in]     hamil                the Hamiltonian as a a weighted sum of Pauli strings.
+ * @param[in,out] hamil                the Hamiltonian as a a weighted sum of Pauli strings,
+ *                                     with ordering mutated when @p permutePaulis=true.
  * @param[in]     time                 the duration over which to simulate evolution.
  * @param[in]     order                the order of the Trotter-Suzuki decomposition (e.g. @p 1, @p 2, @p 4, ...).
  * @param[in]     reps                 the number of Trotter repetitions.
@@ -522,7 +527,8 @@ void applyTrotterizedUnitaryTimeEvolution(Qureg qureg, PauliStrSum hamil, qreal 
  *  - applyTrotterizedNonUnitaryPauliStrSumGadget()
  * 
  * @param[in,out] qureg                the state to modify.
- * @param[in]     hamil                the Hamiltonian as a a weighted sum of Pauli strings.
+ * @param[in,out] hamil                the Hamiltonian as a a weighted sum of Pauli strings,
+ *                                     with ordering mutated when @p permutePaulis=true.
  * @param[in]     tau                  the duration over which to simulate imaginary-time evolution.
  * @param[in]     order                the order of the Trotter-Suzuki decomposition (e.g. @p 1, @p 2, @p 4, ...).
  * @param[in]     reps                 the number of Trotter repetitions.
@@ -662,7 +668,8 @@ void applyTrotterizedImaginaryTimeEvolution(Qureg qureg, PauliStrSum hamil, qrea
  *  - applyTrotterizedImaginaryTimeEvolution()
  * 
  * @param[in,out] qureg                the density-matrix state to evolve and modify.
- * @param[in]     hamil                the Hamiltonian of the qubit system (excludes any environment).
+ * @param[in,out] hamil                the Hamiltonian of the qubit system (excludes any environment),
+ *                                     with ordering mutated when @p permutePaulis=true.
  * @param[in]     damps                the damping rates of each jump operator in @p jumps.
  * @param[in]     jumps                the jump operators specified as PauliStrSum.
  * @param[in]     numJumps             the length of list @p jumps (and @p damps).

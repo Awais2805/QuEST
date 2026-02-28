@@ -66,10 +66,15 @@ typedef struct {
 
     qindex numTerms;
 
-    // arbitrarily-sized collection of Pauli strings and their
-    // coefficients are stored in heap memory.
+    // numTerms-sized collection of Pauli strings and their
+    // corresponding coefficients, stored in heap memory.
     PauliStr* strings;
     qcomp* coeffs;
+
+    // numTerms-sized list of term indices, consulted by some
+    // routines (such as Trotter functions) to effectively
+    // reorder the terms (strings and coeffs)
+    qindex* ordering;
 
     // whether the sum constitutes a Hermitian operator (0, 1, or -1 to indicate unknown),
     // which is lazily evaluated when a function validates Hermiticity them. The flag is 
@@ -101,7 +106,7 @@ typedef struct {
  * @brief Functions for printing Pauli data structures.
  *
  * @defgroup paulis_setters Setters
- * @brief Functions for overwriting the elements of Pauli data structures.
+ * @brief Functions for modifying existing Pauli data structures.
  */
 
 
@@ -435,27 +440,26 @@ extern "C" {
 
     /** @ingroup paulis_setters
      *
-     * Reorders the terms within a @p sum of weighted Pauli strings to sort Pauli
-     * strings into lexicographic (dictionary) ordering.
+     * Reorders the terms within a @p sum of weighted Pauli strings so that Pauli strings 
+     * are ordered lexicographically. 
+     * 
+     * This affects @p sum.ordering, and will change the behaviour of functions like
+     * applyTrotterizedPauliStrSumGadget() when randomised ordering is disabled.
      *
      * @formulae
-     * Let @f$ H = @f$ @p sum, which can be represented as
+     * 
+     * Let @f$ H = @f$ @p sum, satisfying
      * @f[
           H = \sum\limits_j c_j \, \hat{\sigma}_j
      * @f]
      * where @f$ c_j @f$ is the coefficient of the @f$ j @f$-th PauliStr @f$ \hat{\sigma}_j @f$.
      *
-     * This function constructs and applies the permutation @f$ \pi @f$ to @f$ H @f$
-     * @f[
-          H = \sum\limits_j c_{\pi(j)} \, \hat{\sigma}_{\pi(j)}
-     * @f]
-     * such that
+     * This function modifies @p sum.ordering to the permutation @f$ \pi @f$ such that
      * @f[
      *   \hat{\sigma}_{\pi(i)} <_{lex} \hat{\sigma}_{\pi(j)} \  \forall \  \pi(i) < \pi(j).
      * @f]
      *
-     *
-     * @param[in,out] sum  a weighted sum of Pauli strings to reorder.
+     * @param[in,out] sum  a weighted sum of Pauli strings to reorder (via @p sum.ordering)
      *
      * @throws @validationerror
      * - if @p sum is not initialised.
@@ -469,21 +473,21 @@ extern "C" {
 
     /** @ingroup paulis_setters
      *
-     * Reorders the terms within a @p sum of weighted Pauli strings to sort Pauli
-     * strings into decreasing magnitude weights.
+     * Reorders the terms within a @p sum of weighted Pauli strings such that
+     * coefficients are ordered with decreasing magnitude.
+     * 
+     * This affects only @p sum.ordering, and will change the behaviour of functions like
+     * applyTrotterizedPauliStrSumGadget() when randomised ordering is disabled.
      *
      * @formulae
-     * Let @f$ H = @f$ @p sum, represented as the weighted sum
+     *
+     * Let @f$ H = @f$ @p sum, satisfying
      * @f[
           H = \sum\limits_j c_j \, \hat{\sigma}_j
      * @f]
      * where @f$ c_j @f$ is the coefficient of the @f$ j @f$-th PauliStr @f$ \hat{\sigma}_j @f$.
      *
-     * This function constructs and applies the permutation @f$ \pi @f$ to @f$ H @f$
-     * @f[
-          H = \sum\limits_j c_{\pi(j)} \, \hat{\sigma}_{\pi(j)}
-     * @f]
-     * such that
+     * This function modifies @p sum.ordering to the permutation @f$ \pi @f$ such that
      * @f[
      *    |c_{\pi(i)}| > |c_{\pi(j)}| \, \forall \,  \pi(i) < \pi(j).
      * @f]

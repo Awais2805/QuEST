@@ -591,10 +591,11 @@ TEST_CASE( "sortPauliStrSumLexicographic", TEST_CATEGORY ) {
 
     SECTION( LABEL_CORRECTNESS ) {
 
-        vector<qcomp> coeffs = {0.1_i, 2+1_i, 5, 3+4_i};
+        vector<qcomp> coeffs = {0.1_i, 2+1_i, 5, 3+4_i, .3}; // ignored
         vector<PauliStr> strings = {
             getPauliStr("XY", {31,32}),
             getPauliStr("YX", {0,1}),
+            getPauliStr("YX", {1,0}),
             getPauliStr("II", {0,1}),
             getPauliStr("YY", {31,32})
         };
@@ -602,14 +603,15 @@ TEST_CASE( "sortPauliStrSumLexicographic", TEST_CATEGORY ) {
         PauliStrSum sum = createPauliStrSum(strings, coeffs);
         sortPauliStrSumLexicographic(sum);
 
-        REQUIRE(sum.coeffs[0] == 5+0_i);
-        REQUIRE(sum.coeffs[1] == 2+1_i);
-        REQUIRE(sum.coeffs[3] == 3+4_i);
-
-        REQUIRE(sum.strings[0].lowPaulis == 0);
-        REQUIRE(sum.strings[1].lowPaulis == 2 + 1*4);
-        REQUIRE(sum.strings[3].highPaulis == 2);
-        REQUIRE(sum.strings[3].lowPaulis == 2*std::pow(4, 31));
+        vector<qindex> refOrder = {
+            3, // I1 I0
+            1, // X1 Y0
+            2, // Y1 X0
+            0, // Y32 X31
+            4  // Y32 Y31
+        };
+        vector<qindex> apiOrder = vector<qindex>(sum.ordering, sum.ordering + sum.numTerms);
+        REQUIRE( refOrder == apiOrder );
 
         destroyPauliStrSum(sum);
     }
@@ -630,13 +632,10 @@ TEST_CASE( "sortPauliStrSumMagnitude", TEST_CATEGORY ) {
         PauliStrSum sum = createPauliStrSum(strings, coeffs);
         sortPauliStrSumMagnitude(sum);
 
-        REQUIRE(sum.coeffs[0] == 5+0_i);
-        REQUIRE(sum.coeffs[1] == 3+4_i);
-        REQUIRE(sum.coeffs[3] == 0+0.1_i);
-
-        REQUIRE(sum.strings[0].lowPaulis == 0);
-        REQUIRE(sum.strings[1].lowPaulis == 2 + 3*4);
-        REQUIRE(sum.strings[3].lowPaulis == 1 + 2*4);
+        // sorting is stable, so coeff=5 precedes coeff=3+4i
+        vector<qindex> refOrder = {2, 3, 1, 0};
+        vector<qindex> apiOrder = vector<qindex>(sum.ordering, sum.ordering + sum.numTerms);
+        REQUIRE( refOrder == apiOrder );
 
         destroyPauliStrSum(sum);
     }

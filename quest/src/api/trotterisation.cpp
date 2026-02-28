@@ -33,9 +33,12 @@ void internal_applyFirstOrderTrotterRepetition(
 ) {
     // apply each sum term as a gadget, in forward or reverse order
     for (qindex i=0; i<sum.numTerms; i++) {
+
+        // identify the PauliStr which will become the gadget's generator
         int j = reverse? sum.numTerms - i - 1 : i;
-        qcomp coeff = sum.coeffs[j];
-        PauliStr str = sum.strings[j];
+        int k = sum.ordering[j];
+        qcomp coeff = sum.coeffs[k];
+        PauliStr str = sum.strings[k];
 
         // effect |psi> -> exp(i angle * coeff * term)|psi>
         qcomp arg = angle * coeff;
@@ -100,16 +103,18 @@ void internal_applyAllTrotterRepetitions(
 
     // perform carefully-ordered sequence of gadgets
     for (int r=0; r<reps; r++){
+
+        // optionally shuffle term ordering, else use fixed user-set order
         if (permutePaulis)
             rand_permutePauliStrSum(sum);
+
         internal_applyHigherOrderTrotterRepetition(
             qureg, ketCtrlsVec, braCtrlsVec, statesVec, sum, arg, order, onlyLeftApply);
     }
 
     /// @todo
-    /// the accuracy of Trotterisation is greatly improved by randomisation
-    /// or (even sub-optimal) grouping into commuting terms. Should we 
-    /// implement these above or into another function?
+    /// the accuracy of Trotterisation is greatly improved by 
+    /// (even sub-optimal) grouping into commuting terms. 
 }
 
 qindex internal_getNumTotalSuperPropagatorTerms(PauliStrSum hamil, PauliStrSum* jumps, int numJumps) {

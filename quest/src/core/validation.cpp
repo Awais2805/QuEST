@@ -3339,8 +3339,9 @@ void validate_pauliStrSumFields(PauliStrSum sum, const char* caller) {
 
     assertThat(sum.numTerms > 0, report::INVALID_PAULI_STR_SUM_FIELDS, {{"${NUM_TERMS}", sum.numTerms}}, caller);
 
-    assertThat(mem_isAllocated(sum.coeffs),  report::INVALID_PAULI_STR_HEAP_PTR, caller);
-    assertThat(mem_isAllocated(sum.strings), report::INVALID_PAULI_STR_HEAP_PTR, caller);
+    assertThat(mem_isAllocated(sum.coeffs),   report::INVALID_PAULI_STR_HEAP_PTR, caller);
+    assertThat(mem_isAllocated(sum.strings),  report::INVALID_PAULI_STR_HEAP_PTR, caller);
+    assertThat(mem_isAllocated(sum.ordering), report::INVALID_PAULI_STR_HEAP_PTR, caller);
 
     assertThat(mem_isAllocated(sum.isApproxHermitian), report::INVALID_HEAP_FLAG_PTR, caller);
 
@@ -3350,6 +3351,9 @@ void validate_pauliStrSumFields(PauliStrSum sum, const char* caller) {
         {"${BAD_FLAG}", flag}, 
         {"${UNKNOWN_FLAG}", validate_STRUCT_PROPERTY_UNKNOWN_FLAG}};
     assertThat(flag == 0 || flag == 1 || flag == validate_STRUCT_PROPERTY_UNKNOWN_FLAG, report::INVALID_HEAP_FLAG_VALUE, vars, caller);
+
+    // note we DO NOT check whether sum.ordering is valid, i.e. whether it is a unique list of
+    // integers from 0 to sum.numTerms (exclusive) in an arbitrary order
 }
 
 void validate_pauliStrSumIsHermitian(PauliStrSum sum, const char* caller) {

@@ -20,6 +20,8 @@
 
 #include <vector>
 #include <string>
+#include <numeric>
+#include <algorithm>
 
 using std::string;
 using std::vector;
@@ -34,8 +36,9 @@ using std::vector;
 bool didAnyAllocsFailOnAnyNode(PauliStrSum sum) {
 
     bool anyFail = (
-        ! mem_isAllocated(sum.strings) || 
-        ! mem_isAllocated(sum.coeffs)  || 
+        ! mem_isAllocated(sum.strings)  || 
+        ! mem_isAllocated(sum.coeffs)   || 
+        ! mem_isAllocated(sum.ordering) ||
         ! mem_isAllocated(sum.isApproxHermitian) );
     
     if (comm_isInit())
@@ -50,6 +53,7 @@ void freePauliStrSum(PauliStrSum sum) {
     // these do not need to be allocated (freeing nullptr is legal)
     cpu_deallocPauliStrings(sum.strings);
     cpu_deallocArray(sum.coeffs);
+    cpu_deallocIndices(sum.ordering);
     util_deallocEpsilonSensitiveHeapFlag(sum.isApproxHermitian);
 }
 
@@ -173,6 +177,7 @@ extern "C" PauliStrSum createPauliStrSum(PauliStr* strings, qcomp* coeffs, qinde
     out.numTerms = numTerms;
     out.strings = cpu_allocPauliStrings(numTerms);                // nullptr if failed
     out.coeffs  = cpu_allocArray(numTerms);                       // nullptr if failed
+    out.ordering = cpu_allocIndices(numTerms);                    // nullptr if failed
     out.isApproxHermitian = util_allocEpsilonSensitiveHeapFlag(); // nullptr if failed
 
     // if either alloc failed, clear both before validation to avoid leak
@@ -182,6 +187,7 @@ extern "C" PauliStrSum createPauliStrSum(PauliStr* strings, qcomp* coeffs, qinde
     // otherwise copy given data into new heap structure, and set initial flags
     cpu_copyPauliStrSum(out, strings, coeffs);
     util_setFlagToUnknown(out.isApproxHermitian);
+    std::iota(out.ordering, out.ordering + out.numTerms, 0);
 
     return out;
 }
@@ -308,7 +314,8 @@ extern "C" void sortPauliStrSumLexicographic(PauliStrSum sum) {
         return std::tie(strI.highPaulis, strI.lowPaulis) < std::tie(strJ.highPaulis, strJ.lowPaulis);
     };
 
-    paulis_sortTermsViaComparator(sum, lexSort);
+    std::iota(sum.ordering, sum.ordering + sum.numTerms, 0);
+    std::stable_sort(sum.ordering, sum.ordering + sum.numTerms, lexSort);
 }
 
 
@@ -319,5 +326,6 @@ extern "C" void sortPauliStrSumMagnitude(PauliStrSum sum) {
         return std::norm(sum.coeffs[i]) > std::norm(sum.coeffs[j]);
     };
 
-    paulis_sortTermsViaComparator(sum, magSort);
+    std::iota(sum.ordering, sum.ordering + sum.numTerms, 0);
+    std::stable_sort(sum.ordering, sum.ordering + sum.numTerms, magSort);
 }
