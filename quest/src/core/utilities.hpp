@@ -418,6 +418,7 @@ vector<Qureg> util_getVector(Qureg* ptr, int length);
 void util_tryAllocVector(vector<qreal>    &vec, qindex size, std::function<void()> errFunc);
 void util_tryAllocVector(vector<qcomp>    &vec, qindex size, std::function<void()> errFunc);
 void util_tryAllocVector(vector<qcomp*>   &vec, qindex size, std::function<void()> errFunc);
+void util_tryAllocVector(vector<qindex>   &vec, qindex size, std::function<void()> errFunc);
 void util_tryAllocVector(vector<unsigned> &vec, qindex size, std::function<void()> errFunc);
 void util_tryAllocVector(vector<PauliStr> &vec, qindex size, std::function<void()> errFunc);
 

@@ -321,9 +321,13 @@ void paulis_setPauliStrSumToScaledTensorProdOfConjWithSelf(PauliStrSum out, qrea
     for (qindex j=0; j<in.numTerms; j++) {
         for (qindex k=0; k<in.numTerms; k++) {
 
+            // (insignificantly, we let in.ordering affect out construction)
+            qindex jd = in.ordering[j];
+            qindex kd = in.ordering[k];
+
             // ... where conj(P_j) = sign_j P_j
-            out.strings[i] = paulis_getTensorProdOfPauliStr(in.strings[j], in.strings[k], numQubits);
-            out.coeffs[i] = factor * std::conj(in.coeffs[j]) * in.coeffs[k] * paulis_getSignOfPauliStrConj(in.strings[j]);
+            out.strings[i] = paulis_getTensorProdOfPauliStr(in.strings[jd], in.strings[kd], numQubits);
+            out.coeffs[i] = factor * std::conj(in.coeffs[jd]) * in.coeffs[kd] * paulis_getSignOfPauliStrConj(in.strings[jd]);
             i++;
         }
     }
@@ -355,18 +359,24 @@ void paulis_setPauliStrSumToScaledProdOfAdjointWithSelf(PauliStrSum out, qreal f
     // we leverage that sum_jk a_j^* a_k P_j P_k...
     for (qindex j=0; j<in.numTerms; j++) {
 
+        // (insignificantly, we let in.ordering affect out construction)
+        qindex jd = in.ordering[j];
+
         // = sum_j ( |a_j|^2 Id + sum_k<j ...)
-        out.coeffs[0] += factor * std::norm(in.coeffs[j]);
+        out.coeffs[0] += factor * std::norm(in.coeffs[jd]);
 
         // containing sum_k<j (a_j^* a_k P_j P_k + a_k^* a_j P_k P_j)
         for (qindex k=0; k<j; k++) {
 
+            // (insignificantly, we let in.ordering affect out construction)
+            qindex kd = in.ordering[k];
+
             // = (a_j^* a_k b_jk + a_k^* a_j b_jk^*) P'
-            auto [coeff, str] = paulis_getPauliStrProd(in.strings[j], in.strings[k]);
+            auto [coeff, str] = paulis_getPauliStrProd(in.strings[jd], in.strings[kd]);
 
             // = (x + x^*) P' = 2 Re[x] P'
             out.strings[i] = str;
-            out.coeffs[i] = factor * 2 * std::real(std::conj(in.coeffs[j]) * in.coeffs[k] * coeff);
+            out.coeffs[i] = factor * 2 * std::real(std::conj(in.coeffs[jd]) * in.coeffs[kd] * coeff);
             i++;
         }
     }
@@ -383,7 +393,11 @@ void paulis_setPauliStrSumToShiftedConj(PauliStrSum out, PauliStrSum in, int num
 
     // where conj(c P) = conj(c) sign P
     for (qindex i=0; i<out.numTerms; i++) {
-        out.strings[i] = paulis_getShiftedPauliStr(in.strings[i], numQubits);
-        out.coeffs[i] = std::conj(in.coeffs[i]) * paulis_getSignOfPauliStrConj(in.strings[i]);
+
+        // (insignificantly, we let in.ordering affect out construction)
+        qindex id = in.ordering[i];
+
+        out.strings[i] = paulis_getShiftedPauliStr(in.strings[id], numQubits);
+        out.coeffs[i] = std::conj(in.coeffs[id]) * paulis_getSignOfPauliStrConj(in.strings[id]);
     }
 }

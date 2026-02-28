@@ -18,6 +18,7 @@
 #include "quest/src/core/randomiser.hpp"
 
 #include <vector>
+#include <numeric>
 
 using std::vector;
 
@@ -304,17 +305,25 @@ void applyTrotterizedNoisyTimeEvolution(
     // validate memory allocations for all super-propagator terms
     vector<PauliStr> superStrings;
     vector<qcomp> superCoeffs;
-    auto callbackString = [&]() { validate_tempAllocSucceeded(false, numSuperTerms, sizeof(PauliStr), __func__); };
-    auto callbackCoeff  = [&]() { validate_tempAllocSucceeded(false, numSuperTerms, sizeof(qcomp),    __func__); };
-    util_tryAllocVector(superStrings, numSuperTerms, callbackString);
-    util_tryAllocVector(superCoeffs,  numSuperTerms, callbackCoeff);
+    vector<qindex> superOrdering;
+    auto callbackString   = [&]() { validate_tempAllocSucceeded(false, numSuperTerms, sizeof(PauliStr), __func__); };
+    auto callbackCoeff    = [&]() { validate_tempAllocSucceeded(false, numSuperTerms, sizeof(qcomp),    __func__); };
+    auto callbackOrdering = [&]() { validate_tempAllocSucceeded(false, numSuperTerms, sizeof(qindex),   __func__); };
+    util_tryAllocVector(superStrings,  numSuperTerms, callbackString);
+    util_tryAllocVector(superCoeffs,   numSuperTerms, callbackCoeff);
+    util_tryAllocVector(superOrdering, numSuperTerms, callbackOrdering);
 
+    // construct super-propagator term by term, in an order affected by
+    // both hamil.ordering and jumps[].ordering (inside paulis_setters())
     qindex superTermInd = 0;
 
     // collect -i[H,rho] terms
     for (qindex n=0; n<hamil.numTerms; n++) {
-        PauliStr oldStr = hamil.strings[n];
-        qcomp oldCoeff = hamil.coeffs[n];
+
+        // consult hamil ordering during construction
+        qindex m = hamil.ordering[n];
+        PauliStr oldStr = hamil.strings[m];
+        qcomp oldCoeff = hamil.coeffs[m];
 
         // term of -i Id (x) H
         superStrings[superTermInd] = oldStr;
@@ -329,8 +338,8 @@ void applyTrotterizedNoisyTimeEvolution(
 
     // below we bind superStrings/Coeffs to a spoofed PauliStrSum to pass to paulis functions
     PauliStrSum temp;
-    int flagForDebugSafety = -1;
-    temp.isApproxHermitian = &flagForDebugSafety;
+    temp.ordering          = nullptr; // not consulted
+    temp.isApproxHermitian = nullptr; // not consulted
 
     // collect jump terms
     for (int n=0; n<numJumps; n++) {
@@ -363,11 +372,15 @@ void applyTrotterizedNoisyTimeEvolution(
     if (superTermInd != numSuperTerms)
         error_unexpectedNumLindbladSuperpropTerms();
 
+    // initialise superOrdering = {0, 1, 2, ...}
+    std::iota(superOrdering.begin(), superOrdering.end(), 0);
+
     // pass superpropagator terms as temporary PauliStrSum
     PauliStrSum superSum; 
     superSum.numTerms = numSuperTerms;
     superSum.strings = superStrings.data();
     superSum.coeffs = superCoeffs.data();
+    superSum.ordering = superOrdering.data();
     superSum.isApproxHermitian = nullptr; // will not be queried
 
     // effect exp(t S) = exp(x i S) | x=-i*time, left-multiplying only

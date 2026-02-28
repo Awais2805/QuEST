@@ -554,6 +554,11 @@ void applyTrotterizedImaginaryTimeEvolution(Qureg qureg, PauliStrSum hamil, qrea
  * evolution approximated by symmetrized Trotterisation of the specified @p order and number of cycles
  * @p reps.
  * 
+ * Note the ordering of all passed PauliStrSum (through functions like sortPauliStrSumMagnitude()) will
+ * affect that of the internally created super-propagator and ergo the Trotter accuracy. This is overridden
+ * by passing @p permutePaulis=true, whereby the super-propagator order is randomised every Trotter repetition.
+ * This never mutates the ordering of all passed PauliStrSum.
+ * 
  * @formulae 
  * 
  * Let @f$ \rho = @f$ @p qureg, @f$ \hat{H} = @f$ @p hamil, @f$ t = @f$ @p time, and denote the @f$ i @f$-th
@@ -668,8 +673,7 @@ void applyTrotterizedImaginaryTimeEvolution(Qureg qureg, PauliStrSum hamil, qrea
  *  - applyTrotterizedImaginaryTimeEvolution()
  * 
  * @param[in,out] qureg                the density-matrix state to evolve and modify.
- * @param[in,out] hamil                the Hamiltonian of the qubit system (excludes any environment),
- *                                     with ordering mutated when @p permutePaulis=true.
+ * @param[in]     hamil                the Hamiltonian of the qubit system (excludes any environment).
  * @param[in]     damps                the damping rates of each jump operator in @p jumps.
  * @param[in]     jumps                the jump operators specified as PauliStrSum.
  * @param[in]     numJumps             the length of list @p jumps (and @p damps).
