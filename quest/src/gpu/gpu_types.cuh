@@ -24,10 +24,8 @@
     #error "A file being compiled somehow included gpu_types.hpp despite QuEST not being compiled in GPU-accelerated mode."
 #endif
 
-#if defined(__NVCC__)
-    #include <cuComplex.h>
-#elif defined(__HIP__)
-    #include "quest/src/gpu/cuda_to_hip.hpp"
+#if (FLOAT_PRECISION == 4)
+    #error "Build bug; precision.h should have prevented non-float non-double qcomp precision on GPU."
 #endif
 
 #include <array>
@@ -36,225 +34,151 @@
 
 
 /*
- * CUDA-COMPATIBLE QCOMP ALIAS (gpu_qcomp)
+ * COMPLEX SCALAR
  *
- * which we opt to use over a Thrust complex type to gaurantee
- * compatibility with cuQuantum, though this irritatingly 
- * requires explicitly defining operator overloads below
+ * The user-facing qcomp (which in the QuEST middle-end, resolves to
+ * a std::complex) is not used by the GPU backend, since incompatible
+ * with CUDA kernels. We use our own custom gpu_qcomp type below, in
+ * lieu of cuComplex or Thrust types, to workaround compatibility issues
+ * with HIP, and for better symmetry with cpu_qcomp.
  */
 
 
-#if (FLOAT_PRECISION == 1)
-    typedef cuFloatComplex gpu_qcomp;
+struct gpu_qcomp {
 
-#elif (FLOAT_PRECISION == 2)
-    typedef cuDoubleComplex gpu_qcomp;
+    // memory layout
+    qreal re;
+    qreal im;
 
-#else
-    #error "Build bug; precision.h should have prevented non-float non-double qcomp precision on GPU."
+    // in-place complex arithmetic overloads
+    INLINE gpu_qcomp& operator += (const gpu_qcomp& a) noexcept {
+        re += a.re;
+        im += a.im;
+        return *this;
+    }
+    INLINE gpu_qcomp& operator -= (const gpu_qcomp& a) noexcept {
+        re -= a.re;
+        im -= a.im;
+        return *this;
+    }
+    INLINE gpu_qcomp& operator *= (const gpu_qcomp& a) noexcept {
+        qreal re_ = re;
+        qreal im_ = im;
+        re = (re_ * a.re) - (im_ * a.im);
+        im = (re_ * a.im) + (im_ * a.re);
+        return *this;
+    }
 
-#endif
+    // in-place mixed-type arithmetic overloads
+    INLINE gpu_qcomp& operator *= (const int& a) noexcept {
+        re *= a;
+        im *= a;
+        return *this;
+    }
+    INLINE gpu_qcomp& operator *= (const qreal& a) noexcept {
+        re *= a;
+        im *= a;
+        return *this;
+    }
+};
 
 
+// out-of-place complex arithmetic overloads (optimised)
+INLINE gpu_qcomp operator + (gpu_qcomp a, const gpu_qcomp& b) noexcept {
+    a += b;
+    return a;
+}
+INLINE gpu_qcomp operator - (gpu_qcomp a, const gpu_qcomp& b) noexcept {
+    a -= b;
+    return a;
+}
+INLINE gpu_qcomp operator * (gpu_qcomp a, const gpu_qcomp& b) noexcept {
+    a *= b;
+    return a;
+}
 
-/*
- * TRANSFORMING qcomp AND gpu_qcomp
- */
+
+// out-of-place mixed-type arithmetic overloads
+INLINE gpu_qcomp operator * (gpu_qcomp a, const int& b) noexcept {
+    a *= b;
+    return a;
+}
+INLINE gpu_qcomp operator * (gpu_qcomp a, const qreal& b) noexcept {
+    a *= b;
+    return a;
+}
 
 
+// reverse order of out-of-place mixed-type arithmetic (via commutation)
+INLINE gpu_qcomp operator * (const int& a, const gpu_qcomp& b) noexcept {
+    return b * a;
+}
+INLINE gpu_qcomp operator * (const qreal& a, const gpu_qcomp& b) noexcept {
+    return b * a;
+}
+
+
+// no-op cast of pointers
+INLINE gpu_qcomp* getGpuQcompPtr(qcomp* list) {
+
+    return reinterpret_cast<gpu_qcomp*>(list);
+}
+
+
+// get gpu_qcomp from components
 INLINE gpu_qcomp getGpuQcomp(qreal re, qreal im) {
-
-#if (FLOAT_PRECISION == 1)
-    return make_cuFloatComplex(re, im);
-#else
-    return make_cuDoubleComplex(re, im);
-#endif
+    return { re, im };
 }
 
 
-__host__ inline gpu_qcomp toGpuQcomp(qcomp a) {
-    return getGpuQcomp(std::real(a), std::imag(a));
-}
-__host__ inline qcomp toQcomp(gpu_qcomp a) {
-    return getQcomp(a.x, a.y);
+// get gpu_qcomp from qcomp
+INLINE gpu_qcomp getGpuQcomp(const qcomp& a) {
+    return { a.real(), a.imag() };
 }
 
 
-__host__ inline gpu_qcomp* toGpuQcomps(qcomp* a) {
-
-    // reinterpret a qcomp ptr as a gpu_qcomp ptr,
-    // which is ONLY SAFE when comp and gpu_qcomp 
-    // have identical memory layouts. Be very
-    // careful; HIP stack arrays (e.g. qcomp[])
-    // seg-fault when passed here, so this funciton
-    // should only ever be used on malloc'd data!
-    // Stack objects should use the below unpacks.
-
-    return reinterpret_cast<gpu_qcomp*>(a);
+// get qcomp from gpu_qcomp
+INLINE qcomp getQcomp(const gpu_qcomp& a) {
+    return qcomp( a.re, a.im );
 }
 
+    // // creator for fixed-size dense matrices (CompMatr1 and CompMatr2)
+    // template <int dim>
+    // INLINE std::array<std::array<cpu_qcomp,dim>,dim> getCpuQcomps(qcomp matr[dim][dim]) {
 
-__host__ inline std::array<gpu_qcomp,2> unpackMatrixToGpuQcomps(DiagMatr1 in) {
+    //     std::array<std::array<cpu_qcomp,dim>,dim> out;
 
-    // it's crucial we explicitly copy over the elements,
-    // rather than just reinterpret the pointer, to avoid
-    // segmentation faults when memory misaligns (like on HIP)
+    //     for (int i=0; i<dim; i++)
+    //         for (int j=0; j<dim; j++)
+    //             out[i][j] = getCpuQcomp(matr[i][j]);
 
-    return {toGpuQcomp(in.elems[0]), toGpuQcomp(in.elems[1])};
+    //     return out;
+    // }
+
+
+// maths functions
+INLINE qreal real(const gpu_qcomp& a) {
+    return a.re;
 }
-
-
-__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(DiagMatr2 in) {
-
-    return {
-        toGpuQcomp(in.elems[0]), toGpuQcomp(in.elems[1]),
-        toGpuQcomp(in.elems[2]), toGpuQcomp(in.elems[3])};
+INLINE qreal imag(const gpu_qcomp& a) {
+    return a.im;
 }
-
-
-__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(CompMatr1 in) {
-
-    std::array<gpu_qcomp,4> out{};
-    for (int i=0; i<4; i++)
-        out[i] = toGpuQcomp(in.elems[i/2][i%2]);
-
-    return out;
+INLINE gpu_qcomp conj(const gpu_qcomp& a) {
+    return {a.re, - a.im};
 }
-
-
-__host__ inline std::array<gpu_qcomp,16> unpackMatrixToGpuQcomps(CompMatr2 in) {
-
-    std::array<gpu_qcomp,16> out{};
-    for (int i=0; i<16; i++)
-        out[i] = toGpuQcomp(in.elems[i/4][i%4]);
-
-    return out;
+INLINE qreal norm(const gpu_qcomp& a) noexcept {
+    return (a.re * a.re) + (a.im * a.im);
 }
-
-
-
-
-/*
- * gpu_qcomp ARITHMETIC OVERLOADS
- *
- * which are only needed by NVCC because
- * HIP defines them for us. This good deed
- * goes punished; a HIP bug disables our
- * use of *= and += overloads, so kernels.cuh
- * has disgusting (x = x * y) statements. Bah!
- */
-
-
-/// @todo
-/// - clean this up (with templates?)
-/// - use getGpuQcomp() rather than struct creation,
-///   to make the algebra implementation-agnostic
-
-
-#if defined(__NVCC__)
-
-INLINE gpu_qcomp operator + (const gpu_qcomp& a, const gpu_qcomp& b) {
-    gpu_qcomp out = {
-        .x = a.x + b.x,
-        .y = a.y + b.y
-    };
-    return out;
-}
-
-INLINE gpu_qcomp operator - (const gpu_qcomp& a, const gpu_qcomp& b) {
-    gpu_qcomp out = {
-        .x = a.x - b.x,
-        .y = a.y - b.y
-    };
-    return out;
-}
-
-INLINE gpu_qcomp operator * (const gpu_qcomp& a, const gpu_qcomp& b) {
-    gpu_qcomp out = {
-        .x = a.x * b.x - a.y * b.y,
-        .y = a.x * b.y + a.y * b.x
-    };
-    return out;
-}
-
-
-INLINE gpu_qcomp operator + (const gpu_qcomp& a, const qreal& b) {
-    gpu_qcomp out = {
-        .x = a.x + b,
-        .y = a.y + b
-    };
-    return out;
-}
-INLINE gpu_qcomp operator + (const qreal& b, const gpu_qcomp& a) {
-    gpu_qcomp out = {
-        .x = a.x + b,
-        .y = a.y + b
-    };
-    return out;
-}
-
-INLINE gpu_qcomp operator - (const gpu_qcomp& a, const qreal& b) {
-    gpu_qcomp out = {
-        .x = a.x - b,
-        .y = a.y - b
-    };
-    return out;
-}
-INLINE gpu_qcomp operator - (const qreal& b, const gpu_qcomp& a) {
-    gpu_qcomp out = {
-        .x = a.x - b,
-        .y = a.y - b
-    };
-    return out;
-}
-
-INLINE gpu_qcomp operator * (const gpu_qcomp& a, const qreal& b) {
-    gpu_qcomp out = {
-        .x = a.x * b,
-        .y = a.y * b
-    };
-    return out;
-}
-INLINE gpu_qcomp operator * (const qreal& b, const gpu_qcomp& a) {
-    gpu_qcomp out = {
-        .x = a.x * b,
-        .y = a.y * b
-    };
-    return out;
-}
-
-#endif
-
-
-
-/*
- * gpu_qcomp UNARY FUNCTIONS
- */
-
-
-INLINE qreal getCompReal(gpu_qcomp num) {
-    return num.x;
-}
-
-INLINE gpu_qcomp getCompConj(gpu_qcomp num) {
-    num.y *= -1;
-    return num;
-}
-
-INLINE qreal getCompNorm(gpu_qcomp num) {
-    return (num.x * num.x) + (num.y * num.y);
-}
-
-INLINE gpu_qcomp getCompPower(gpu_qcomp base, gpu_qcomp exponent) {
+INLINE gpu_qcomp pow(gpu_qcomp base, gpu_qcomp exponent) {
 
     // using https://mathworld.wolfram.com/ComplexExponentiation.html,
     // and the principal argument of 'base'
 
     // base = a + b i, exponent = c + d i
-    qreal a = base.x;
-    qreal b = base.y;
-    qreal c = exponent.x;
-    qreal d = exponent.y;
+    qreal a = base.re;
+    qreal b = base.im;
+    qreal c = exponent.re;
+    qreal d = exponent.im;
 
     // intermediate quantities (uses CUDA atan2,log,pow,exp,cos,sin)
     qreal arg = atan2(b, a);
@@ -269,6 +193,80 @@ INLINE gpu_qcomp getCompPower(gpu_qcomp base, gpu_qcomp exponent) {
     return getGpuQcomp(re, im);
 }
 
+
+// check the memory layout of gpu_qcomp agrees with qcomp, since
+// it is not formally gauranteed, unlike _Complex and std::complex
+static_assert(sizeof (gpu_qcomp) == sizeof (qcomp));
+static_assert(alignof(gpu_qcomp) == alignof(qcomp));
+static_assert(std::is_standard_layout_v   <gpu_qcomp>);
+static_assert(std::is_trivially_copyable_v<gpu_qcomp>);
+
+
+// TODO:
+// the above checks are potentially inadequate to identify an
+// insidious incompatibility between qcomp and gpu_qcomp - perhaps
+// we should perform a compile-time duck-check, casting a small
+// array between them and checking no data is corrupted? Perhaps
+// a runtime check in initQuESTEnv() is also necessary, checking the
+// casting is safe for all circumstances (e.g. heap mem, static lists)
+
+
+
+
+/*
+ * TODO:
+ * OLD UNPACKERS
+ *
+ * which I am hestitant to switch to the CPU-style until I better
+ * understand why the explicit gpu_qcomp instantiation is necessary
+ * (iirc static HIP structs have a different alignment than qcomp?!)
+ */
+
+
+__host__ inline std::array<gpu_qcomp,2> unpackMatrixToGpuQcomps(DiagMatr1 in) {
+
+    // it's crucial we explicitly copy over the elements,
+    // rather than just reinterpret the pointer, to avoid
+    // segmentation faults when memory misaligns (like on HIP)
+
+    // oh YES we must not cast statically created HIP arrays
+    // like within kernels?!?!
+
+
+
+        // UMMMMMM is the above true?!?!
+        // Wen did I witness misalignment between std::complex and gpu_qcomp?!
+
+    return {getGpuQcomp(in.elems[0]), getGpuQcomp(in.elems[1])};
+}
+
+
+__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(DiagMatr2 in) {
+
+    return {
+        getGpuQcomp(in.elems[0]), getGpuQcomp(in.elems[1]),
+        getGpuQcomp(in.elems[2]), getGpuQcomp(in.elems[3])};
+}
+
+
+__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(CompMatr1 in) {
+
+    std::array<gpu_qcomp,4> out{};
+    for (int i=0; i<4; i++)
+        out[i] = getGpuQcomp(in.elems[i/2][i%2]);
+
+    return out;
+}
+
+
+__host__ inline std::array<gpu_qcomp,16> unpackMatrixToGpuQcomps(CompMatr2 in) {
+
+    std::array<gpu_qcomp,16> out{};
+    for (int i=0; i<16; i++)
+        out[i] = getGpuQcomp(in.elems[i/4][i%4]);
+
+    return out;
+}
 
 
 #endif // GPU_TYPES_HPP

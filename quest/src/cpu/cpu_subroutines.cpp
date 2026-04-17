@@ -660,6 +660,9 @@ void cpu_statevec_anyCtrlOneTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
         // I am paranoid the above casting from qcomp* to cpu_qcomp* is
         // more dangerous for the static matr.elems than the heap pointer.
         // Is it more vulnerable to misalignment? Check this!
+        //
+        // If this IS the case, we simply prepare a new cpu_qcomp
+        // instance for each element, like the GPU backend does
 
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
@@ -707,6 +710,9 @@ void cpu_statevec_anyCtrlTwoTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
         // I am paranoid the above casting from qcomp* to cpu_qcomp* is
         // more dangerous for the static matr.elems than the heap pointer.
         // Is it more vulnerable to misalignment? Check this!
+        //
+        // If this IS the case, we simply prepare a new cpu_qcomp
+        // instance for each element, like the GPU backend does
 
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);

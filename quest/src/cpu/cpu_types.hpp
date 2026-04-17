@@ -22,7 +22,8 @@
  * a std::complex) is not used by the CPU backend, since it creates
  * performance pitfalls (e.g. expensive NaN checks within arithmetic
  * operators) in some compilers. Instead, we use the below custom
- * complex type and operator overloads.
+ * complex type and operator overloads, which must ergo crucially
+ * be POD and share the memory layout and alignment of qcomp
  */
 
 
@@ -107,13 +108,13 @@ INLINE cpu_qcomp* getCpuQcompPtr(qcomp* list) {
 }
 
 
-// creator for cpu_qcomp literals
+// get cpu_qcomp from components
 INLINE cpu_qcomp getCpuQcomp(qreal re, qreal im) {
     return { re, im };
 }
 
 
-// creator for qcomp conversion
+// get cpu_qcomp from qcomp
 INLINE cpu_qcomp getCpuQcomp(const qcomp& a) {
     return { a.real(), a.imag() };
 }
