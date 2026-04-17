@@ -2399,7 +2399,7 @@ qcomp cpu_densmatr_calcExpecPauliStr_sub(Qureg qureg, vector<int> x, vector<int>
     qindex firstDiagInd = util_getLocalIndexOfFirstDiagonalAmp(qureg);
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
-    cpu_qcomp* amps   = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
 
     // these masks indicate global paulis (i.e. not just suffix)
     qindex maskXY = util_getBitMask(util_getConcatenated(x, y));

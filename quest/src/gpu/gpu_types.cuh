@@ -36,7 +36,7 @@
 
 
 /*
- * CUDA-COMPATIBLE QCOMP ALIAS (cu_qcomp)
+ * CUDA-COMPATIBLE QCOMP ALIAS (gpu_qcomp)
  *
  * which we opt to use over a Thrust complex type to gaurantee
  * compatibility with cuQuantum, though this irritatingly 
@@ -45,10 +45,10 @@
 
 
 #if (FLOAT_PRECISION == 1)
-    typedef cuFloatComplex cu_qcomp;
+    typedef cuFloatComplex gpu_qcomp;
 
 #elif (FLOAT_PRECISION == 2)
-    typedef cuDoubleComplex cu_qcomp;
+    typedef cuDoubleComplex gpu_qcomp;
 
 #else
     #error "Build bug; precision.h should have prevented non-float non-double qcomp precision on GPU."
@@ -58,11 +58,11 @@
 
 
 /*
- * TRANSFORMING qcomp AND cu_qcomp
+ * TRANSFORMING qcomp AND gpu_qcomp
  */
 
 
-INLINE cu_qcomp getCuQcomp(qreal re, qreal im) {
+INLINE gpu_qcomp getGpuQcomp(qreal re, qreal im) {
 
 #if (FLOAT_PRECISION == 1)
     return make_cuFloatComplex(re, im);
@@ -72,61 +72,61 @@ INLINE cu_qcomp getCuQcomp(qreal re, qreal im) {
 }
 
 
-__host__ inline cu_qcomp toCuQcomp(qcomp a) {
-    return getCuQcomp(std::real(a), std::imag(a));
+__host__ inline gpu_qcomp toGpuQcomp(qcomp a) {
+    return getGpuQcomp(std::real(a), std::imag(a));
 }
-__host__ inline qcomp toQcomp(cu_qcomp a) {
+__host__ inline qcomp toQcomp(gpu_qcomp a) {
     return getQcomp(a.x, a.y);
 }
 
 
-__host__ inline cu_qcomp* toCuQcomps(qcomp* a) {
+__host__ inline gpu_qcomp* toGpuQcomps(qcomp* a) {
 
-    // reinterpret a qcomp ptr as a cu_qcomp ptr,
-    // which is ONLY SAFE when comp and cu_qcomp 
+    // reinterpret a qcomp ptr as a gpu_qcomp ptr,
+    // which is ONLY SAFE when comp and gpu_qcomp 
     // have identical memory layouts. Be very
     // careful; HIP stack arrays (e.g. qcomp[])
     // seg-fault when passed here, so this funciton
     // should only ever be used on malloc'd data!
     // Stack objects should use the below unpacks.
 
-    return reinterpret_cast<cu_qcomp*>(a);
+    return reinterpret_cast<gpu_qcomp*>(a);
 }
 
 
-__host__ inline std::array<cu_qcomp,2> unpackMatrixToCuQcomps(DiagMatr1 in) {
+__host__ inline std::array<gpu_qcomp,2> unpackMatrixToGpuQcomps(DiagMatr1 in) {
 
     // it's crucial we explicitly copy over the elements,
     // rather than just reinterpret the pointer, to avoid
     // segmentation faults when memory misaligns (like on HIP)
 
-    return {toCuQcomp(in.elems[0]), toCuQcomp(in.elems[1])};
+    return {toGpuQcomp(in.elems[0]), toGpuQcomp(in.elems[1])};
 }
 
 
-__host__ inline std::array<cu_qcomp,4> unpackMatrixToCuQcomps(DiagMatr2 in) {
+__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(DiagMatr2 in) {
 
     return {
-        toCuQcomp(in.elems[0]), toCuQcomp(in.elems[1]),
-        toCuQcomp(in.elems[2]), toCuQcomp(in.elems[3])};
+        toGpuQcomp(in.elems[0]), toGpuQcomp(in.elems[1]),
+        toGpuQcomp(in.elems[2]), toGpuQcomp(in.elems[3])};
 }
 
 
-__host__ inline std::array<cu_qcomp,4> unpackMatrixToCuQcomps(CompMatr1 in) {
+__host__ inline std::array<gpu_qcomp,4> unpackMatrixToGpuQcomps(CompMatr1 in) {
 
-    std::array<cu_qcomp,4> out{};
+    std::array<gpu_qcomp,4> out{};
     for (int i=0; i<4; i++)
-        out[i] = toCuQcomp(in.elems[i/2][i%2]);
+        out[i] = toGpuQcomp(in.elems[i/2][i%2]);
 
     return out;
 }
 
 
-__host__ inline std::array<cu_qcomp,16> unpackMatrixToCuQcomps(CompMatr2 in) {
+__host__ inline std::array<gpu_qcomp,16> unpackMatrixToGpuQcomps(CompMatr2 in) {
 
-    std::array<cu_qcomp,16> out{};
+    std::array<gpu_qcomp,16> out{};
     for (int i=0; i<16; i++)
-        out[i] = toCuQcomp(in.elems[i/4][i%4]);
+        out[i] = toGpuQcomp(in.elems[i/4][i%4]);
 
     return out;
 }
@@ -135,7 +135,7 @@ __host__ inline std::array<cu_qcomp,16> unpackMatrixToCuQcomps(CompMatr2 in) {
 
 
 /*
- * cu_qcomp ARITHMETIC OVERLOADS
+ * gpu_qcomp ARITHMETIC OVERLOADS
  *
  * which are only needed by NVCC because
  * HIP defines them for us. This good deed
@@ -147,30 +147,30 @@ __host__ inline std::array<cu_qcomp,16> unpackMatrixToCuQcomps(CompMatr2 in) {
 
 /// @todo
 /// - clean this up (with templates?)
-/// - use getCuQcomp() rather than struct creation,
+/// - use getGpuQcomp() rather than struct creation,
 ///   to make the algebra implementation-agnostic
 
 
 #if defined(__NVCC__)
 
-INLINE cu_qcomp operator + (const cu_qcomp& a, const cu_qcomp& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator + (const gpu_qcomp& a, const gpu_qcomp& b) {
+    gpu_qcomp out = {
         .x = a.x + b.x,
         .y = a.y + b.y
     };
     return out;
 }
 
-INLINE cu_qcomp operator - (const cu_qcomp& a, const cu_qcomp& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator - (const gpu_qcomp& a, const gpu_qcomp& b) {
+    gpu_qcomp out = {
         .x = a.x - b.x,
         .y = a.y - b.y
     };
     return out;
 }
 
-INLINE cu_qcomp operator * (const cu_qcomp& a, const cu_qcomp& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator * (const gpu_qcomp& a, const gpu_qcomp& b) {
+    gpu_qcomp out = {
         .x = a.x * b.x - a.y * b.y,
         .y = a.x * b.y + a.y * b.x
     };
@@ -178,45 +178,45 @@ INLINE cu_qcomp operator * (const cu_qcomp& a, const cu_qcomp& b) {
 }
 
 
-INLINE cu_qcomp operator + (const cu_qcomp& a, const qreal& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator + (const gpu_qcomp& a, const qreal& b) {
+    gpu_qcomp out = {
         .x = a.x + b,
         .y = a.y + b
     };
     return out;
 }
-INLINE cu_qcomp operator + (const qreal& b, const cu_qcomp& a) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator + (const qreal& b, const gpu_qcomp& a) {
+    gpu_qcomp out = {
         .x = a.x + b,
         .y = a.y + b
     };
     return out;
 }
 
-INLINE cu_qcomp operator - (const cu_qcomp& a, const qreal& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator - (const gpu_qcomp& a, const qreal& b) {
+    gpu_qcomp out = {
         .x = a.x - b,
         .y = a.y - b
     };
     return out;
 }
-INLINE cu_qcomp operator - (const qreal& b, const cu_qcomp& a) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator - (const qreal& b, const gpu_qcomp& a) {
+    gpu_qcomp out = {
         .x = a.x - b,
         .y = a.y - b
     };
     return out;
 }
 
-INLINE cu_qcomp operator * (const cu_qcomp& a, const qreal& b) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator * (const gpu_qcomp& a, const qreal& b) {
+    gpu_qcomp out = {
         .x = a.x * b,
         .y = a.y * b
     };
     return out;
 }
-INLINE cu_qcomp operator * (const qreal& b, const cu_qcomp& a) {
-    cu_qcomp out = {
+INLINE gpu_qcomp operator * (const qreal& b, const gpu_qcomp& a) {
+    gpu_qcomp out = {
         .x = a.x * b,
         .y = a.y * b
     };
@@ -228,24 +228,24 @@ INLINE cu_qcomp operator * (const qreal& b, const cu_qcomp& a) {
 
 
 /*
- * cu_qcomp UNARY FUNCTIONS
+ * gpu_qcomp UNARY FUNCTIONS
  */
 
 
-INLINE qreal getCompReal(cu_qcomp num) {
+INLINE qreal getCompReal(gpu_qcomp num) {
     return num.x;
 }
 
-INLINE cu_qcomp getCompConj(cu_qcomp num) {
+INLINE gpu_qcomp getCompConj(gpu_qcomp num) {
     num.y *= -1;
     return num;
 }
 
-INLINE qreal getCompNorm(cu_qcomp num) {
+INLINE qreal getCompNorm(gpu_qcomp num) {
     return (num.x * num.x) + (num.y * num.y);
 }
 
-INLINE cu_qcomp getCompPower(cu_qcomp base, cu_qcomp exponent) {
+INLINE gpu_qcomp getCompPower(gpu_qcomp base, gpu_qcomp exponent) {
 
     // using https://mathworld.wolfram.com/ComplexExponentiation.html,
     // and the principal argument of 'base'
@@ -266,7 +266,7 @@ INLINE cu_qcomp getCompPower(cu_qcomp base, cu_qcomp exponent) {
     // output scalar
     qreal re = fac * cos(ang);
     qreal im = fac * sin(ang);
-    return getCuQcomp(re, im);
+    return getGpuQcomp(re, im);
 }
 
 

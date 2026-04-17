@@ -112,10 +112,12 @@ INLINE cpu_qcomp getCpuQcomp(qreal re, qreal im) {
     return { re, im };
 }
 
+
 // creator for qcomp conversion
 INLINE cpu_qcomp getCpuQcomp(const qcomp& a) {
     return { a.real(), a.imag() };
 }
+
 
 // creator for fixed-size dense matrices (CompMatr1 and CompMatr2)
 template <int dim>
@@ -129,6 +131,7 @@ INLINE std::array<std::array<cpu_qcomp,dim>,dim> getCpuQcomps(qcomp matr[dim][di
 
     return out;
 }
+
 
 // maths functions
 INLINE qreal real(const cpu_qcomp& a) {
