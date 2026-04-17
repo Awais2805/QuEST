@@ -19,27 +19,6 @@
 
 
 /*
- * TYPE ALIASING
- */
-
-
-// 'qcomp' cannot be used inside CUDA kernels/thrust, so must not appear in
-// these inlined definitions. Instead, we create an alias which will resolve
-// to 'qcomp' (defined in types.h) when parsed by the CPU backend, and 'cu_qcomp'
-// (defined in gpu_types.cuh which is not explicitly resolved in this header)
-// when parsed by the GPU backend, which will prior define USE_CU_QCOMP. It is
-// essential this header is included after gpu_types.cuh is included by the
-// GPU backend. Hacky, but avoids code duplication!
-
-#ifdef USE_CU_QCOMP
-    #define QCOMP_ALIAS cu_qcomp
-#else
-    #define QCOMP_ALIAS qcomp
-#endif
-
-
-
-/*
  * ARITHMETIC
  */
 
@@ -121,7 +100,9 @@ INLINE void fast_getSubQuregValues(qindex basisStateIndex, int* numQubitsPerSubQ
  */
 
 
-INLINE QCOMP_ALIAS fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
+// T = qcomp, cpu_qcomp, gpu_qcomp
+template <typename T>
+INLINE T fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
 
     // this function is called by both fullstatediagmatr_setElemsToPauliStrSum()
     // and densmatr_setAmpsToPauliStrSum_sub(). The former's PauliStr can have
@@ -133,13 +114,13 @@ INLINE QCOMP_ALIAS fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
     // though opens the risk that the former caller erroneously has its upper
     // Paulis ignore. We forego this optimisation in defensive design, and
     // because this function is only invoked during data structure initilisation
-    // and ergo infrequently.s
+    // and ergo infrequently.
 
     // regrettably duplicated from paulis.cpp which is inaccessible here
     constexpr int numPaulisPerMask = sizeof(PAULI_MASK_TYPE) * 8 / 2;
 
-    // QCOMP_ALIAS-agnostic literals
-    QCOMP_ALIAS p0, p1,n1, pI,nI;
+    // T-agnostic complex literals
+    T p0, p1,n1, pI,nI;
     p0 = {0,  0}; //  0
     p1 = {+1, 0}; //  1
     n1 = {-1, 0}; // -1
@@ -152,20 +133,20 @@ INLINE QCOMP_ALIAS fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
     // but this poses no real slowdown; this function, and its caller, are inlined
     // so these 16 amps are re-processed one for each full enumeration of the
     // PauliStrSum which is expected to have significantly more terms/coeffs
-    QCOMP_ALIAS matrices[][2][2] = {
+    T matrices[][2][2] = {
         {{p1,p0},{p0,p1}},  // I
         {{p0,p1},{p1,p0}},  // X
         {{p0,nI},{pI,p0}},  // Y
         {{p1,p0},{p0,n1}}}; // Z
 
-    QCOMP_ALIAS elem = p1; // 1
+    T elem = p1; // 1
 
     // could be compile-time unrolled into 32 iterations
     for (int t=0; t<numPaulisPerMask; t++) {
         int p = getTwoAdjacentBits(str.lowPaulis, 2*t);
         int i = getBit(row, t);
         int j = getBit(col, t);
-        elem = elem * matrices[p][i][j]; // HIP-friendly avoiding *=
+        elem *= matrices[p][i][j];
     }
 
     // could be compile-time unrolled into 32 iterations
@@ -173,31 +154,29 @@ INLINE QCOMP_ALIAS fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
         int p = getTwoAdjacentBits(str.highPaulis, 2*t);
         int i = getBit(row, t + numPaulisPerMask);
         int j = getBit(col, t + numPaulisPerMask);
-        elem = elem * matrices[p][i][j];
+        elem *= matrices[p][i][j];
     }
 
     return elem;
 }
 
 
-INLINE QCOMP_ALIAS fast_getPauliStrSumElem(QCOMP_ALIAS* coeffs, PauliStr* strings, qindex numTerms, qindex row, qindex col) {
+// T = qcomp, cpu_qcomp, gpu_qcomp
+template <typename T>
+INLINE T fast_getPauliStrSumElem(T* coeffs, PauliStr* strings, qindex numTerms, qindex row, qindex col) {
 
     // this function accepts unpacked PauliStrSum fields since a PauliStrSum cannot 
     // be directly processed in CUDA kernels/thrust due to its 'qcomp' field.
     // it also assumes str.highPaulis==0 for all str in strings, as per above func.
 
-    QCOMP_ALIAS elem = {0, 0}; // type-agnostic literal
+    T elem = {0, 0}; // type-agnostic complex literal
 
     // this loop is expected exponentially smaller than caller's loop
     for (qindex n=0; n<numTerms; n++)
-        elem = elem + coeffs[n] * fast_getPauliStrElem(strings[n], row, col); // += is HIP-incomaptible
+        elem += coeffs[n] * fast_getPauliStrElem<T>(strings[n], row, col);
 
     return elem;
 }
 
-
-
-// avoid exposing alias macro outside header
-#undef QCOMP_ALIAS
 
 #endif // FASTMATH_HPP
