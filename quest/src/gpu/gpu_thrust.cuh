@@ -110,7 +110,7 @@ gpu_qcomp* getPtr(devcomps& comps) {
 
     // devcomps -> qcomp -> gpu_qcomp
     qcomp* ptr =  thrust::raw_pointer_cast(comps.data());
-    return toGpuQcomps(ptr);
+    return getGpuQcompPtr(ptr);
 }
 
 
@@ -138,7 +138,7 @@ thrust::device_ptr<gpu_qcomp> getStartPtr(gpu_qcomp* amps) {
 }
 auto getStartPtr(qcomp* amps) {
 
-    return getStartPtr(toGpuQcomps(amps));
+    return getStartPtr(getGpuQcompPtr(amps));
 }
 
 
@@ -650,7 +650,7 @@ void thrust_fullstatediagmatr_setElemsToPauliStrSum(FullStateDiagMatr out, Pauli
     thrust::device_vector<PauliStr> devStrings(in.strings, in.strings + in.numTerms);
     
     // obtain raw pointers which can be passed to fastmath.hpp routines
-    gpu_qcomp* devCoeffsPtr = toGpuQcomps(thrust::raw_pointer_cast(devCoeffs.data()));
+    gpu_qcomp* devCoeffsPtr = getGpuQcompPtr(thrust::raw_pointer_cast(devCoeffs.data()));
     PauliStr* devStringsPtr = thrust::raw_pointer_cast(devStrings.data());
 
     int rank = out.isDistributed? comm_getRank() : 0;
@@ -659,7 +659,7 @@ void thrust_fullstatediagmatr_setElemsToPauliStrSum(FullStateDiagMatr out, Pauli
     // <true> indicates the PauliStrSum is diagonal (contains only I or Z)
     auto functor = functor_setAmpToPauliStrSumElem<true>(
         rank, out.numElems, logNumElemsPerNode,
-        in.numTerms, toGpuQcomps(out.gpuElems), devCoeffsPtr, devStringsPtr);
+        in.numTerms, getGpuQcompPtr(out.gpuElems), devCoeffsPtr, devStringsPtr);
 
     auto indIter = thrust::make_counting_iterator(QINDEX_ZERO);
     auto endIter = indIter + out.numElemsPerNode;
@@ -696,13 +696,13 @@ void thrust_densmatr_setAmpsToPauliStrSum_sub(Qureg qureg, PauliStrSum sum) {
     thrust::device_vector<PauliStr> devStrings(sum.strings, sum.strings + sum.numTerms);
     
     // obtain raw pointers which can be passed to fastmath.hpp routines
-    gpu_qcomp* devCoeffsPtr = toGpuQcomps(thrust::raw_pointer_cast(devCoeffs.data()));
+    gpu_qcomp* devCoeffsPtr = getGpuQcompPtr(thrust::raw_pointer_cast(devCoeffs.data()));
     PauliStr* devStringsPtr = thrust::raw_pointer_cast(devStrings.data());
 
     // <false> indicates the PauliStrSum is not diagonal (contains X or Y)
     auto functor = functor_setAmpToPauliStrSumElem<false>(
         qureg.rank, powerOf2(qureg.numQubits), qureg.logNumAmpsPerNode,
-        sum.numTerms, toGpuQcomps(qureg.gpuAmps), devCoeffsPtr, devStringsPtr);
+        sum.numTerms, getGpuQcompPtr(qureg.gpuAmps), devCoeffsPtr, devStringsPtr);
 
     auto indIter = thrust::make_counting_iterator(QINDEX_ZERO);
     auto endIter = indIter + qureg.numAmpsPerNode;
@@ -858,7 +858,7 @@ gpu_qcomp thrust_densmatr_calcFidelityWithPureState_sub(Qureg rho, Qureg psi) {
     // functor accepts an index and produces a gpu_qcomp
     auto functor = functor_getFidelityTerm<Conj>(
         rho.rank, rho.numQubits, rho.logNumAmpsPerNode, 
-        psi.numAmps, toGpuQcomps(rho.gpuAmps), toGpuQcomps(psi.gpuAmps));
+        psi.numAmps, getGpuQcompPtr(rho.gpuAmps), getGpuQcompPtr(psi.gpuAmps));
 
     auto indIter = thrust::make_counting_iterator(QINDEX_ZERO);
     qindex numIts = rho.numAmpsPerNode;
@@ -898,7 +898,7 @@ gpu_qcomp thrust_densmatr_calcExpecAnyTargZ_sub(Qureg qureg, vector<int> targs) 
     qindex dim = powerOf2(qureg.numQubits);
     qindex ind = util_getLocalIndexOfFirstDiagonalAmp(qureg);
     qindex mask = util_getBitMask(targs);
-    auto functor = functor_getExpecDensMatrZTerm(dim, ind, mask, toGpuQcomps(qureg.gpuAmps));
+    auto functor = functor_getExpecDensMatrZTerm(dim, ind, mask, getGpuQcompPtr(qureg.gpuAmps));
 
     gpu_qcomp init = getGpuQcomp(0, 0);
     auto indIter = thrust::make_counting_iterator(QINDEX_ZERO);
@@ -912,7 +912,7 @@ gpu_qcomp thrust_statevec_calcExpecPauliStr_subA(Qureg qureg, vector<int> x, vec
 
     qindex maskXY = util_getBitMask(util_getConcatenated(x, y));
     qindex maskYZ = util_getBitMask(util_getConcatenated(y, z));
-    auto ampsPtr = toGpuQcomps(qureg.gpuAmps);
+    auto ampsPtr = getGpuQcompPtr(qureg.gpuAmps);
     auto functor = functor_getExpecStateVecPauliTerm(maskXY, maskYZ, ampsPtr, ampsPtr); // amps=pairAmps
 
     gpu_qcomp init = getGpuQcomp(0, 0);
@@ -921,7 +921,7 @@ gpu_qcomp thrust_statevec_calcExpecPauliStr_subA(Qureg qureg, vector<int> x, vec
 
     gpu_qcomp value = thrust::transform_reduce(indIter, endIter, functor, init, thrust::plus<gpu_qcomp>());
 
-    return value * toGpuQcomp(util_getPowerOfI(y.size()));
+    return value * getGpuQcomp(util_getPowerOfI(y.size()));
 }
 
 
@@ -929,8 +929,8 @@ gpu_qcomp thrust_statevec_calcExpecPauliStr_subB(Qureg qureg, vector<int> x, vec
 
     qindex maskXY = util_getBitMask(util_getConcatenated(x, y));
     qindex maskYZ = util_getBitMask(util_getConcatenated(y, z));
-    auto ampsPtr = toGpuQcomps(qureg.gpuAmps);
-    auto buffPtr = toGpuQcomps(qureg.gpuCommBuffer);
+    auto ampsPtr = getGpuQcompPtr(qureg.gpuAmps);
+    auto buffPtr = getGpuQcompPtr(qureg.gpuCommBuffer);
     auto functor = functor_getExpecStateVecPauliTerm(maskXY, maskYZ, ampsPtr, buffPtr);
 
     gpu_qcomp init = getGpuQcomp(0, 0);
@@ -939,7 +939,7 @@ gpu_qcomp thrust_statevec_calcExpecPauliStr_subB(Qureg qureg, vector<int> x, vec
 
     gpu_qcomp value = thrust::transform_reduce(indIter, endIter, functor, init, thrust::plus<gpu_qcomp>());
 
-    return value * toGpuQcomp(util_getPowerOfI(y.size()));
+    return value * getGpuQcomp(util_getPowerOfI(y.size()));
 }
 
 
@@ -949,7 +949,7 @@ gpu_qcomp thrust_densmatr_calcExpecPauliStr_sub(Qureg qureg, vector<int> x, vect
     qindex mYZ = util_getBitMask(util_getConcatenated(y, z));
     qindex dim = powerOf2(qureg.numQubits);
     qindex ind = util_getLocalIndexOfFirstDiagonalAmp(qureg);
-    auto functor = functor_getExpecDensMatrPauliTerm(mXY, mYZ, dim, ind, toGpuQcomps(qureg.gpuAmps));
+    auto functor = functor_getExpecDensMatrPauliTerm(mXY, mYZ, dim, ind, getGpuQcompPtr(qureg.gpuAmps));
 
     gpu_qcomp init = getGpuQcomp(0, 0);
     auto indIter = thrust::make_counting_iterator(QINDEX_ZERO);
@@ -957,7 +957,7 @@ gpu_qcomp thrust_densmatr_calcExpecPauliStr_sub(Qureg qureg, vector<int> x, vect
 
     gpu_qcomp value = thrust::transform_reduce(indIter, endIter, functor, init, thrust::plus<gpu_qcomp>());
 
-    return value * toGpuQcomp(util_getPowerOfI(y.size()));
+    return value * getGpuQcomp(util_getPowerOfI(y.size()));
 }
 
 
@@ -986,8 +986,8 @@ gpu_qcomp thrust_densmatr_calcExpecFullStateDiagMatr_sub(Qureg qureg, FullStateD
 
     qindex dim = powerOf2(qureg.numQubits);
     qindex ind = util_getLocalIndexOfFirstDiagonalAmp(qureg);
-    auto ampsPtr = toGpuQcomps(qureg.gpuAmps);
-    auto elemsPtr = toGpuQcomps(matr.gpuElems);
+    auto ampsPtr = getGpuQcompPtr(qureg.gpuAmps);
+    auto elemsPtr = getGpuQcompPtr(matr.gpuElems);
     auto functor = functor_getExpecDensMatrDiagMatrTerm<HasPower,UseRealPow>(dim, ind, ampsPtr, elemsPtr, expo);
 
     gpu_qcomp init = getGpuQcomp(0, 0);

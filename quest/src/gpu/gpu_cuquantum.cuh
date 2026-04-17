@@ -182,7 +182,7 @@ void cuquantum_statevec_anyCtrlSwap_subA(Qureg qureg, vector<int> ctrls, vector<
 
     CUDA_CHECK( custatevecSwapIndexBits(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         targPairs, numTargPairs,
 
         // swap mask params seem to be in the reverse order to the remainder of the cuStateVec API
@@ -210,7 +210,7 @@ void cuquantum_statevec_anyCtrlAnyTargDenseMatrix_subA(Qureg qureg, vector<int> 
 
     CUDA_CHECK( custatevecApplyMatrix(
         config.handle, 
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode, 
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode, 
         flatMatrElems, CUQUANTUM_QCOMP, CUSTATEVEC_MATRIX_LAYOUT_ROW, applyAdj, 
         targs.data(), targs.size(),
         ctrls.data(), ctrlStates.data(), ctrls.size(), 
@@ -239,7 +239,7 @@ void cuquantum_statevec_anyCtrlAnyTargDiagMatr_sub(Qureg qureg, vector<int> ctrl
 
     CUDA_CHECK( custatevecApplyGeneralizedPermutationMatrix(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         perm, flatMatrElems, CUQUANTUM_QCOMP, adj, 
         targs.data(), targs.size(), 
         ctrls.data(), ctrlStates.data(), ctrls.size(),
@@ -331,7 +331,7 @@ qreal cuquantum_statevec_calcTotalProb_sub(Qureg qureg) {
 
     CUDA_CHECK( custatevecAbs2SumOnZBasis(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         &prob0, &prob1, &qubit, numQubits ) );
 
     qreal total = prob0 + prob1;
@@ -346,7 +346,7 @@ qreal cuquantum_statevec_calcProbOfMultiQubitOutcome_sub(Qureg qureg, vector<int
 
     CUDA_CHECK( custatevecAbs2SumArray(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         &prob, nullptr, 0, outcomes.data(), qubits.data(), qubits.size()) );
 
     return static_cast<qreal>(prob);
@@ -367,7 +367,7 @@ void cuquantum_statevec_calcProbsOfAllMultiQubitOutcomes_sub(qreal* outProbs, Qu
 
     CUDA_CHECK( custatevecAbs2SumArray(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         outPtr, qubits.data(), qubits.size(), nullptr, nullptr, 0) );
 
     // serially cast and copy output probabilities, if necessary
@@ -409,7 +409,7 @@ qreal cuquantum_statevec_calcExpecPauliStr_subA(Qureg qureg, vector<int> x, vect
 
     CUDA_CHECK( custatevecComputeExpectationsOnPauliBasis(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         &value, termPaulis, numTerms, termTargets, numPaulisPerTerm) );
 
     return static_cast<qreal>(value);
@@ -432,7 +432,7 @@ void cuquantum_statevec_multiQubitProjector_sub(Qureg qureg, vector<int> qubits,
 
     CUDA_CHECK( custatevecCollapseByBitString(
         config.handle,
-        toGpuQcomps(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
+        getGpuQcompPtr(qureg.gpuAmps), CUQUANTUM_QCOMP, qureg.logNumAmpsPerNode,
         outcomes.data(), qubits.data(), qubits.size(), prob) );
 }
 
