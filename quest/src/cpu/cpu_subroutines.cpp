@@ -412,7 +412,7 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subA(Qureg qureg, vector<int> ctrls, v
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
     cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
-    auto elems = getCpuQcomps(matr.elems);
+    auto elems = getCpuQcomps<2>(matr.elems); // MSVC requires explicit template param, bah!
 
     auto sortedQubits   = util_getSorted(ctrls, {targ});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ}, {0});
@@ -495,7 +495,7 @@ void cpu_statevec_anyCtrlTwoTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
     cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
-    auto elems = getCpuQcomps(matr.elems);
+    auto elems = getCpuQcomps<4>(matr.elems); // MSVC requires explicit template param, bah!
 
     auto sortedQubits   = util_getSorted(ctrls, {targ1, targ2});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ1, targ2}, {0, 0});
