@@ -173,7 +173,7 @@ qindex gpu_statevec_packPairSummedAmpsIntoBuffer(Qureg qureg, int qubit1, int qu
     qindex sendInd = getSubBufferSendInd(qureg);
 
     kernel_statevec_packPairSummedAmpsIntoBuffer <<<numBlocks, NUM_THREADS_PER_BLOCK>>> (
-        getGpuQcompPtr(qureg.gpuAmps), getGpuQcompPtr(qureg.gpuCommBuffer + sendInd, numThreads, 
+        getGpuQcompPtr(qureg.gpuAmps), getGpuQcompPtr(qureg.gpuCommBuffer) + sendInd, numThreads, 
         qubit1, qubit2, qubit3, bit2
     );
 
@@ -1231,7 +1231,7 @@ void gpu_densmatr_twoQubitDepolarising_subD(Qureg qureg, int ketQb1, int ketQb2,
     auto factors = util_getTwoQubitDepolarisingFactors(prob);
 
     kernel_densmatr_twoQubitDepolarising_subD <<<numBlocks, NUM_THREADS_PER_BLOCK>>> (
-        getGpuQcompPtr(qureg.gpuAmps), getGpuQcompPtr(qureg.gpuCommBuffer + offset, numThreads,
+        getGpuQcompPtr(qureg.gpuAmps), getGpuQcompPtr(qureg.gpuCommBuffer) + offset, numThreads,
         ketQb1, ketQb2, braQb1, braBit2, factors.c1, factors.c2
     );
 

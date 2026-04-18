@@ -1190,7 +1190,7 @@ __global__ void kernel_statevec_calcProbsOfAllMultiQubitOutcomes_sub(
     // use template param to compile-time unroll below loops
     SET_VAR_AT_COMPILE_TIME(int, numBits, NumQubits, numQubits);
 
-    qreal prob = getCompNorm(amps[n]);
+    qreal prob = norm(amps[n]);
 
     // i = global index corresponding to n
     qindex i = concatenateBits(rank, n, logNumAmpsPerNode);
@@ -1216,7 +1216,7 @@ __global__ void kernel_densmatr_calcProbsOfAllMultiQubitOutcomes_sub(
 
     // i = index of nth local diagonal elem
     qindex i = fast_getQuregLocalIndexOfDiagonalAmp(n, firstDiagInd, numAmpsPerCol);
-    qreal prob = getCompReal(amps[i]);
+    qreal prob = real(amps[i]);
 
     // j = global index of i
     qindex j = concatenateBits(rank, i, logNumAmpsPerNode);

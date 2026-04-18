@@ -174,21 +174,21 @@ auto getEndPtr(FullStateDiagMatr matr) {
 struct functor_getAmpConj {
 
     __host__ __device__ gpu_qcomp operator()(gpu_qcomp amp) {
-        return getCompConj(amp);
+        return conj(amp);
     }
 };
 
 struct functor_getAmpNorm {
 
     __host__ __device__ qreal operator()(gpu_qcomp amp) {
-        return getCompNorm(amp);
+        return norm(amp);
     }
 };
 
 struct functor_getAmpReal {
 
     __host__ __device__ qreal operator()(gpu_qcomp amp) {
-        return getCompReal(amp);
+        return real(amp);
     }
 };
 
@@ -196,14 +196,14 @@ struct functor_getAmpReal {
 struct functor_getAmpConjProd {
 
     __host__ __device__ gpu_qcomp operator()(gpu_qcomp braAmp, gpu_qcomp ketAmp) { 
-        return getCompConj(braAmp) * ketAmp;
+        return conj(braAmp) * ketAmp;
     }
 };
 
 struct functor_getNormOfAmpDif {
 
     __host__ __device__ qreal operator()(gpu_qcomp amp1, gpu_qcomp amp2) { 
-        return getCompNorm(amp1 - amp2);
+        return norm(amp1 - amp2);
     }
 };
 
@@ -220,7 +220,7 @@ struct functor_getExpecStateVecZTerm {
         
         int par = cudaGetBitMaskParity(ind & targMask); // device-only
         int sign = fast_getPlusOrMinusOne(par);
-        return sign * getCompNorm(amp);
+        return sign * norm(amp);
     }
 };
 
@@ -267,7 +267,7 @@ struct functor_getExpecStateVecPauliTerm {
         int sign = fast_getPlusOrMinusOne(par);
 
         // sign excludes i^numY contribution
-        return sign * getCompConj(amps[n]) * pairAmps[j]; // pairAmps may be amps or buffer
+        return sign * conj(amps[n]) * pairAmps[j]; // pairAmps may be amps or buffer
     }
 };
 
@@ -316,9 +316,9 @@ struct functor_getExpecDensMatrDiagMatrTerm {
         gpu_qcomp elem = elems[n];
 
         if constexpr (HasPower && ! UseRealPow)
-            elem = getCompPower(elem, expo);
+            elem = pow(elem, expo);
         if constexpr (HasPower &&   UseRealPow)
-            elem = getGpuQcomp(pow(getCompReal(elem), getCompReal(expo)),0); // CUDA pow(qreal,qreal)
+            elem = getGpuQcomp(pow(real(elem), real(expo)), 0); // CUDA pow(qreal,qreal)
 
         qindex i = fast_getQuregLocalIndexOfDiagonalAmp(n, firstDiagInd, numAmpsPerCol);
 
@@ -399,12 +399,12 @@ struct functor_multiplyElemPowerWithAmpOrNorm {
     __host__ __device__ gpu_qcomp operator()(gpu_qcomp quregAmp, gpu_qcomp matrElem) {
 
         if constexpr (HasPower && ! UseRealPow)
-            matrElem = getCompPower(matrElem, exponent);
+            matrElem = pow(matrElem, exponent);
         if constexpr (HasPower &&   UseRealPow)
-            matrElem = getGpuQcomp(pow(getCompReal(matrElem), getCompReal(exponent)),0); // CUDA pow(qreal,qreal)
+            matrElem = getGpuQcomp(pow(real(matrElem), real(exponent)), 0); // CUDA pow(qreal,qreal)
 
         if constexpr (Norm)
-            quregAmp = getGpuQcomp(getCompNorm(quregAmp), 0);
+            quregAmp = getGpuQcomp(norm(quregAmp), 0);
 
         return matrElem * quregAmp;
     }
@@ -486,10 +486,10 @@ struct functor_getFidelityTerm {
 
         // compute term of <psi|rho^dagger|psi> or <psi|rho|psi>
         if constexpr (Conj) {
-            rhoAmp = getCompConj(rhoAmp);
-            colAmp = getCompConj(colAmp);
+            rhoAmp = conj(rhoAmp);
+            colAmp = conj(colAmp);
         } else
-            rowAmp = getCompConj(rowAmp);
+            rowAmp = conj(rowAmp);
 
         gpu_qcomp fid = rhoAmp * rowAmp * colAmp;
         return fid;
