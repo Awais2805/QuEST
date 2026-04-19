@@ -252,10 +252,9 @@ jobs:
           -DCMAKE_CUDA_ARCHITECTURES=${{ env.cuda_arch }}
           -DCMAKE_HIP_ARCHITECTURES=${{ env.hip_arch }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -DCMAKE_CXX_FLAGS=${{
-            (matrix.mpi == 'ON' && matrix.cuda == 'ON' && '-fno-lto ' || '')
-            + (matrix.compiler == 'cl' && '/MP1' || '')
-          }}
+          -DCMAKE_CXX_FLAGS=${{ matrix.mpi == 'ON' && matrix.cuda == 'ON' && '-fno-lto' || '' }}
+          -DCMAKE_CXX_FLAGS_DEBUG=${{ matrix.compiler == 'cl' && '/MP1' || '' }}
+          -DCMAKE_CXX_FLAGS_RELEASE=${{ matrix.compiler == 'cl' && '/MP1' || '' }}
 
       ### DEBUG:
       ### above disables parallel compilation with MSVC
