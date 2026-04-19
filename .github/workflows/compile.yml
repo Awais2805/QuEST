@@ -235,16 +235,12 @@ jobs:
           sudo apt install rocm rocm-hip-sdk rocm-hip-runtime-dev
           echo "${{ env.rocm_path }}" >> $GITHUB_PATH
 
-      # DEBUG:
-      # temporarily disabling test-file compilation to debug MSVC with OpenMP failure
-      # (possibly just a Catch issue?!?!)
-
       # invoke cmake, disabling LTO (it duplicates symbols with CUDA + MPI)
       - name: Configure CMake
         run: >
           cmake -B ${{ env.build_dir }}
           -DBUILD_EXAMPLES=ON
-          -DENABLE_TESTING=OFF
+          -DENABLE_TESTING=ON
           -DFLOAT_PRECISION=${{ matrix.precision }}
           -DENABLE_DEPRECATED_API=${{ matrix.deprecated }}
           -DDISABLE_DEPRECATION_WARNINGS=${{ matrix.deprecated }}
@@ -256,7 +252,13 @@ jobs:
           -DCMAKE_CUDA_ARCHITECTURES=${{ env.cuda_arch }}
           -DCMAKE_HIP_ARCHITECTURES=${{ env.hip_arch }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -DCMAKE_CXX_FLAGS=${{ matrix.mpi == 'ON' && matrix.cuda == 'ON' && '-fno-lto' || '' }}
+          -DCMAKE_CXX_FLAGS=${{
+            (matrix.mpi == 'ON' && matrix.cuda == 'ON' && '-fno-lto ' || '')
+            + (matrix.compiler == 'cl' && '/MP1' || '')
+          }}
+
+      ### DEBUG:
+      ### above disables parallel compilation with MSVC
 
       # force 'Release' build (needed by MSVC to enable optimisations)
       - name: Compile
