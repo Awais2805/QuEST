@@ -758,6 +758,7 @@ void cpu_statevec_anyCtrlAnyTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
     cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
     cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
 
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
@@ -825,6 +826,7 @@ void cpu_statevec_allTargDiagMatr_sub(Qureg qureg, FullStateDiagMatr matr, qcomp
     cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
     cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
 
     #pragma omp parallel for if(qureg.isMultithreaded||qureg.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
@@ -864,6 +866,7 @@ void cpu_densmatr_allTargDiagMatr_sub(Qureg qureg, FullStateDiagMatr matr, qcomp
     cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
     cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
 
     #pragma omp parallel for if(qureg.isMultithreaded||matr.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
@@ -2459,6 +2462,7 @@ qcomp cpu_statevec_calcExpecFullStateDiagMatr_sub(Qureg qureg, FullStateDiagMatr
     cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
     cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
 
     #pragma omp parallel for reduction(+:valueRe,valueIm) if(qureg.isMultithreaded||matr.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
@@ -2506,6 +2510,7 @@ qcomp cpu_densmatr_calcExpecFullStateDiagMatr_sub(Qureg qureg, FullStateDiagMatr
     cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
     cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
 
     #pragma omp parallel for reduction(+:valueRe,valueIm) if(qureg.isMultithreaded||matr.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
