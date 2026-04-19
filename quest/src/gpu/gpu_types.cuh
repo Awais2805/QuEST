@@ -107,6 +107,10 @@ INLINE gpu_qcomp operator * (gpu_qcomp a, const qreal& b) noexcept {
     a *= b;
     return a;
 }
+INLINE gpu_qcomp operator * (gpu_qcomp a, const size_t& b) noexcept {
+    a *= static_cast<qreal>(b);
+    return a;
+}
 
 
 // reverse order of out-of-place mixed-type arithmetic (via commutation)
@@ -131,14 +135,14 @@ INLINE gpu_qcomp getGpuQcomp(qreal re, qreal im) {
 }
 
 
-// get gpu_qcomp from qcomp
-INLINE gpu_qcomp getGpuQcomp(const qcomp& a) {
+// get gpu_qcomp from qcomp (host only; qcomp forbiddin in device code)
+__host__ gpu_qcomp getGpuQcomp(const qcomp& a) {
     return { a.real(), a.imag() };
 }
 
 
-// get qcomp from gpu_qcomp
-INLINE qcomp getQcomp(const gpu_qcomp& a) {
+// get qcomp from gpu_qcomp (host only; qcomp forbiddin in device code)
+__host__ qcomp getQcomp(const gpu_qcomp& a) {
     return qcomp( a.re, a.im );
 }
 
