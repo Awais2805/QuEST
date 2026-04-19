@@ -126,9 +126,12 @@ INLINE qcomp getQcomp(const cpu_qcomp& a) {
 }
 
 
-// creator for fixed-size dense matrices (CompMatr1 and CompMatr2)
+// creator for fixed-size dense matrices (CompMatr1 and CompMatr2) ((not inlined!))
 template <int dim>
-INLINE std::array<std::array<cpu_qcomp,dim>,dim> getCpuQcomps(qcomp matr[dim][dim]) {
+std::array<std::array<cpu_qcomp,dim>,dim> getCpuQcomps(qcomp matr[dim][dim]) {
+
+    // detect brain-dead compiler inferencing (looking at you MSVC...)
+    static_assert(dim == 2 || dim == 4, "getCpuQcomps called with unexpected dim");
 
     std::array<std::array<cpu_qcomp,dim>,dim> out;
 
