@@ -120,6 +120,12 @@ INLINE cpu_qcomp getCpuQcomp(const qcomp& a) {
 }
 
 
+// get qcomp from cpu_qcomp
+INLINE qcomp getQcomp(const cpu_qcomp& a) {
+    return qcomp( a.re, a.im );
+}
+
+
 // creator for fixed-size dense matrices (CompMatr1 and CompMatr2)
 template <int dim>
 INLINE std::array<std::array<cpu_qcomp,dim>,dim> getCpuQcomps(qcomp matr[dim][dim]) {
@@ -148,13 +154,16 @@ INLINE qreal norm(const cpu_qcomp& a) noexcept {
     return (a.re * a.re) + (a.im * a.im);
 }
 INLINE cpu_qcomp pow(cpu_qcomp base, cpu_qcomp expo) noexcept {
-    
-    // TODO: here, we re-use std::pow(std::complex), accepting NaN-check
-    //       performance penalties - find a speedup without compiler flags!
-    auto& base_ = reinterpret_cast<const qcomp&>(base);
-    auto& expo_ = reinterpret_cast<const qcomp&>(expo);
-    qcomp out = std::pow(base_, expo_);
-    return reinterpret_cast<cpu_qcomp&>(out);
+
+    // Here, we re-use std::pow(std::complex) to avoid a custom definition,
+    // and so accept NaN-check performance penalties. Notice too we also
+    // create new qcomp(), rather than just reinterpreting the given cpu_qcomp,
+    // just to avoid any insiduous issues alignment/aliasing issues (since the
+    // creation time iss occluded by std::pow time).
+    qcomp base_ = getQcomp(base);
+    qcomp expo_ = getQcomp(expo);
+    qcomp out_ = std::pow(base_, expo_);
+    return getCpuQcomp(out_);
 }
 
 
