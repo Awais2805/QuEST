@@ -28,6 +28,10 @@
     #error "Build bug; precision.h should have prevented non-float non-double qcomp precision on GPU."
 #endif
 
+#if defined(__HIP__)
+    #include "quest/src/gpu/cuda_to_hip.hpp"
+#endif
+
 #include <array>
 #include <vector>
 
