@@ -602,6 +602,9 @@ if (ENABLE_TESTING)
     target_compile_options(Catch2 PRIVATE
       $<$<CXX_COMPILER_ID:MSVC>:/EHs>
     )
+    target_compile_options(Catch2 PRIVATE
+      $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+    )
   
   # otherwise fail
   else()

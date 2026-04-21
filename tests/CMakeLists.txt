@@ -18,6 +18,9 @@ target_compile_options(tests PRIVATE
 target_compile_options(tests PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
 )
+target_compile_options(Catch2 PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+)
 
 
 add_subdirectory(unit)
