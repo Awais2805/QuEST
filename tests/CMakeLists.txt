@@ -1,5 +1,9 @@
 # @author Oliver Thomson Brown
 
+# DEBUG:
+# trying to get MSVC to compile
+add_compile_definitions(CATCH_CONFIG_WINDOWS_SEH)
+
 add_executable(tests
   main.cpp
 )
