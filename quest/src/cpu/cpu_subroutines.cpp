@@ -412,7 +412,11 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subA(Qureg qureg, vector<int> ctrls, v
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
     cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
-    auto elems = getCpuQcompsMatr1(matr.elems); // MSVC requires explicit template param, bah!
+    // auto elems = getCpuQcompsMatr1(matr.elems);
+    cpu_qcomp m00 = getCpuQcomp(matr.elems[0][0]); // MSVC cannot handle 2D cpu_qcomps
+    cpu_qcomp m01 = getCpuQcomp(matr.elems[0][1]);
+    cpu_qcomp m10 = getCpuQcomp(matr.elems[1][0]);
+    cpu_qcomp m11 = getCpuQcomp(matr.elems[1][1]);
 
     auto sortedQubits   = util_getSorted(ctrls, {targ});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ}, {0});
@@ -432,8 +436,10 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subA(Qureg qureg, vector<int> ctrls, v
         cpu_qcomp amp0 = amps[i0];
         cpu_qcomp amp1 = amps[i1];
 
-        amps[i0] = elems[0][0]*amp0 + elems[0][1]*amp1;
-        amps[i1] = elems[1][0]*amp0 + elems[1][1]*amp1;
+        // amps[i0] = elems[0][0]*amp0 + elems[0][1]*amp1;
+        // amps[i1] = elems[1][0]*amp0 + elems[1][1]*amp1;
+        amps[i0] = m00*amp0 + m01*amp1;
+        amps[i1] = m10*amp0 + m11*amp1;
     }
 }
 
@@ -495,7 +501,30 @@ void cpu_statevec_anyCtrlTwoTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
     cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
-    auto elems = getCpuQcompsMatr2(matr.elems); // MSVC requires explicit template param, bah!
+
+    // auto elems = getCpuQcompsMatr2(matr.elems); // MSVC requires explicit template param, bah!
+
+    cpu_qcomp m00 = getCpuQcomp(matr.elems[0][0]);
+    cpu_qcomp m01 = getCpuQcomp(matr.elems[0][1]);
+    cpu_qcomp m02 = getCpuQcomp(matr.elems[0][2]);
+    cpu_qcomp m03 = getCpuQcomp(matr.elems[0][3]);
+
+    cpu_qcomp m10 = getCpuQcomp(matr.elems[1][0]);
+    cpu_qcomp m11 = getCpuQcomp(matr.elems[1][1]);
+    cpu_qcomp m12 = getCpuQcomp(matr.elems[1][2]);
+    cpu_qcomp m13 = getCpuQcomp(matr.elems[1][3]);
+
+    cpu_qcomp m20 = getCpuQcomp(matr.elems[2][0]);
+    cpu_qcomp m21 = getCpuQcomp(matr.elems[2][1]);
+    cpu_qcomp m22 = getCpuQcomp(matr.elems[2][2]);
+    cpu_qcomp m23 = getCpuQcomp(matr.elems[2][3]);
+
+    cpu_qcomp m30 = getCpuQcomp(matr.elems[3][0]);
+    cpu_qcomp m31 = getCpuQcomp(matr.elems[3][1]);
+    cpu_qcomp m32 = getCpuQcomp(matr.elems[3][2]);
+    cpu_qcomp m33 = getCpuQcomp(matr.elems[3][3]);
+
+    
 
     auto sortedQubits   = util_getSorted(ctrls, {targ1, targ2});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ1, targ2}, {0, 0});
@@ -520,10 +549,15 @@ void cpu_statevec_anyCtrlTwoTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
         cpu_qcomp amp11 = amps[i11];
 
         // amps[i_n] = sum_j matr.elems[n][j] amp[i_n]
-        amps[i00] = elems[0][0]*amp00 + elems[0][1]*amp01 + elems[0][2]*amp10 + elems[0][3]*amp11;
-        amps[i01] = elems[1][0]*amp00 + elems[1][1]*amp01 + elems[1][2]*amp10 + elems[1][3]*amp11;
-        amps[i10] = elems[2][0]*amp00 + elems[2][1]*amp01 + elems[2][2]*amp10 + elems[2][3]*amp11;
-        amps[i11] = elems[3][0]*amp00 + elems[3][1]*amp01 + elems[3][2]*amp10 + elems[3][3]*amp11;
+        // amps[i00] = elems[0][0]*amp00 + elems[0][1]*amp01 + elems[0][2]*amp10 + elems[0][3]*amp11;
+        // amps[i01] = elems[1][0]*amp00 + elems[1][1]*amp01 + elems[1][2]*amp10 + elems[1][3]*amp11;
+        // amps[i10] = elems[2][0]*amp00 + elems[2][1]*amp01 + elems[2][2]*amp10 + elems[2][3]*amp11;
+        // amps[i11] = elems[3][0]*amp00 + elems[3][1]*amp01 + elems[3][2]*amp10 + elems[3][3]*amp11;
+
+        amps[i00] = m00*amp00 + m01*amp01 + m02*amp10 + m03*amp11;
+        amps[i01] = m10*amp00 + m11*amp01 + m12*amp10 + m13*amp11;
+        amps[i10] = m20*amp00 + m21*amp01 + m22*amp10 + m23*amp11;
+        amps[i11] = m30*amp00 + m31*amp01 + m32*amp10 + m33*amp11;
     }
 }
 
