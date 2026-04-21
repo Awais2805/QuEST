@@ -14,6 +14,8 @@ target_compile_options(Catch2 PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
   $<$<CXX_COMPILER_ID:MSVC>:/Zm500>
 )
+add_compile_definitions(CATCH_CONFIG_DISABLE_STRINGIFICATION)
+add_compile_definitions(CATCH_CONFIG_FAST_COMPILE)
 
 
 add_subdirectory(unit)
