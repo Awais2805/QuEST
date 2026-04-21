@@ -1,10 +1,5 @@
 # @author Oliver Thomson Brown
 
-# DEBUG:
-# trying to get MSVC to compile
-add_compile_definitions(CATCH_CONFIG_WINDOWS_SEH)
-add_compile_definitions(CATCH_CONFIG_DISABLE_STRINGIFICATION)
-
 add_executable(tests
   main.cpp
 )
@@ -12,12 +7,8 @@ target_link_libraries(tests PRIVATE QuEST::QuEST Catch2::Catch2)
 target_compile_features(tests PUBLIC cxx_std_20)
 
 
-target_compile_options(tests PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/EHs>
-)
-target_compile_options(tests PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
-)
+# DEBUG:
+# trying to get MSVC to compile
 target_compile_options(Catch2 PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
 )
