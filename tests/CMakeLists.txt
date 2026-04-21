@@ -12,6 +12,7 @@ target_compile_features(tests PUBLIC cxx_std_20)
 target_compile_options(Catch2 PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
   $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+  $<$<CXX_COMPILER_ID:MSVC>:/Zm500>
 )
 
 
