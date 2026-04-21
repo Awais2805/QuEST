@@ -12,7 +12,7 @@ target_compile_features(tests PUBLIC cxx_std_20)
 
 
 target_compile_options(tests PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
+  $<$<CXX_COMPILER_ID:MSVC>:/EHs>
 )
 
 

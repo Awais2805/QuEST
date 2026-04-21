@@ -317,7 +317,7 @@ target_compile_options(QuEST
 
 target_compile_options(QuEST
   PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
+  $<$<CXX_COMPILER_ID:MSVC>:/EHs>
 )
 
 
@@ -600,7 +600,7 @@ if (ENABLE_TESTING)
     FetchContent_MakeAvailable(Catch2)
 
     target_compile_options(Catch2 PRIVATE
-      $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
+      $<$<CXX_COMPILER_ID:MSVC>:/EHs>
     )
   
   # otherwise fail
