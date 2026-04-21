@@ -10,6 +10,7 @@ target_compile_features(tests PUBLIC cxx_std_20)
 # DEBUG:
 # trying to get MSVC to compile
 target_compile_options(Catch2 PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
   $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
 )
 
