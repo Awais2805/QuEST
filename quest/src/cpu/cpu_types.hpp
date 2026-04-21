@@ -127,7 +127,12 @@ INLINE qcomp getQcomp(const cpu_qcomp& a) {
 
 
 // creator for fixed-size dense matrices (CompMatr1 and CompMatr2) ((not inlined!))
-std::array<std::array<cpu_qcomp,2>,2> getCpuQcomps2(qcomp matr[2][2]) {
+std::array<std::array<cpu_qcomp,2>,2> getCpuQcompsMatr1(qcomp matr[2][2]) {
+
+    // dumb and explicit here because MSVC + OpenMP breaks
+    // when templating this - not worth fixing here because
+    // we are considering a refactor which merges cpu_types.hpp
+    // with gpu_types.cuh anyway
 
     std::array<std::array<cpu_qcomp,2>,2> out;
 
@@ -137,7 +142,7 @@ std::array<std::array<cpu_qcomp,2>,2> getCpuQcomps2(qcomp matr[2][2]) {
 
     return out;
 }
-std::array<std::array<cpu_qcomp,4>,4> getCpuQcomps4(qcomp matr[4][4]) {
+std::array<std::array<cpu_qcomp,4>,4> getCpuQcompsMatr2(qcomp matr[4][4]) {
 
     std::array<std::array<cpu_qcomp,4>,4> out;
 
