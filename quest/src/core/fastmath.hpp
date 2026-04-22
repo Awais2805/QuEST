@@ -100,83 +100,83 @@ INLINE void fast_getSubQuregValues(qindex basisStateIndex, int* numQubitsPerSubQ
  */
 
 
-// T = qcomp, cpu_qcomp, gpu_qcomp
-template <typename T>
-INLINE T fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
+// // T = qcomp, cpu_qcomp, gpu_qcomp
+// template <typename T>
+// INLINE T fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
 
-    // this function is called by both fullstatediagmatr_setElemsToPauliStrSum()
-    // and densmatr_setAmpsToPauliStrSum_sub(). The former's PauliStr can have
-    // Paulis on any of the 64 sites, but the latter's PauliStr is always
-    // constrainted to the lower 32 sites (because a 32-qubit density matrix
-    // is already too large for the world's computers). As such, the latter
-    // scenario can be optimised since str.highPaulis == 0, making the second
-    // loop below redundant. Avoiding this loop can at most half the runtime,
-    // though opens the risk that the former caller erroneously has its upper
-    // Paulis ignore. We forego this optimisation in defensive design, and
-    // because this function is only invoked during data structure initilisation
-    // and ergo infrequently.
+//     // this function is called by both fullstatediagmatr_setElemsToPauliStrSum()
+//     // and densmatr_setAmpsToPauliStrSum_sub(). The former's PauliStr can have
+//     // Paulis on any of the 64 sites, but the latter's PauliStr is always
+//     // constrainted to the lower 32 sites (because a 32-qubit density matrix
+//     // is already too large for the world's computers). As such, the latter
+//     // scenario can be optimised since str.highPaulis == 0, making the second
+//     // loop below redundant. Avoiding this loop can at most half the runtime,
+//     // though opens the risk that the former caller erroneously has its upper
+//     // Paulis ignore. We forego this optimisation in defensive design, and
+//     // because this function is only invoked during data structure initilisation
+//     // and ergo infrequently.
 
-    // regrettably duplicated from paulis.cpp which is inaccessible here
-    constexpr int numPaulisPerMask = sizeof(PAULI_MASK_TYPE) * 8 / 2;
+//     // regrettably duplicated from paulis.cpp which is inaccessible here
+//     constexpr int numPaulisPerMask = sizeof(PAULI_MASK_TYPE) * 8 / 2;
 
-    // T-agnostic complex literals
-    T p0, p1,n1, pI,nI;
-    p0 = {0,  0}; //  0
-    p1 = {+1, 0}; //  1
-    n1 = {-1, 0}; // -1
-    pI = {0, +1}; //  i
-    nI = {0, -1}; // -i
+//     // T-agnostic complex literals
+//     T p0, p1,n1, pI,nI;
+//     p0 = {0,  0}; //  0
+//     p1 = {+1, 0}; //  1
+//     n1 = {-1, 0}; // -1
+//     pI = {0, +1}; //  i
+//     nI = {0, -1}; // -i
 
-    // 'matrices' below is not declared constexpr or static const, even though
-    // it is fixed/known at compile-time, because this makes it incompatible
-    // with CUDA kernels/thrust. It is instead left as runtime innitialisation
-    // but this poses no real slowdown; this function, and its caller, are inlined
-    // so these 16 amps are re-processed one for each full enumeration of the
-    // PauliStrSum which is expected to have significantly more terms/coeffs
-    T matrices[][2][2] = {
-        {{p1,p0},{p0,p1}},  // I
-        {{p0,p1},{p1,p0}},  // X
-        {{p0,nI},{pI,p0}},  // Y
-        {{p1,p0},{p0,n1}}}; // Z
+//     // 'matrices' below is not declared constexpr or static const, even though
+//     // it is fixed/known at compile-time, because this makes it incompatible
+//     // with CUDA kernels/thrust. It is instead left as runtime innitialisation
+//     // but this poses no real slowdown; this function, and its caller, are inlined
+//     // so these 16 amps are re-processed one for each full enumeration of the
+//     // PauliStrSum which is expected to have significantly more terms/coeffs
+//     T matrices[][2][2] = {
+//         {{p1,p0},{p0,p1}},  // I
+//         {{p0,p1},{p1,p0}},  // X
+//         {{p0,nI},{pI,p0}},  // Y
+//         {{p1,p0},{p0,n1}}}; // Z
 
-    T elem = p1; // 1
+//     T elem = p1; // 1
 
-    // could be compile-time unrolled into 32 iterations
-    for (int t=0; t<numPaulisPerMask; t++) {
-        int p = getTwoAdjacentBits(str.lowPaulis, 2*t);
-        int i = getBit(row, t);
-        int j = getBit(col, t);
-        elem *= matrices[p][i][j];
-    }
+//     // could be compile-time unrolled into 32 iterations
+//     for (int t=0; t<numPaulisPerMask; t++) {
+//         int p = getTwoAdjacentBits(str.lowPaulis, 2*t);
+//         int i = getBit(row, t);
+//         int j = getBit(col, t);
+//         elem *= matrices[p][i][j];
+//     }
 
-    // could be compile-time unrolled into 32 iterations
-    for (int t=0; t<numPaulisPerMask; t++) {
-        int p = getTwoAdjacentBits(str.highPaulis, 2*t);
-        int i = getBit(row, t + numPaulisPerMask);
-        int j = getBit(col, t + numPaulisPerMask);
-        elem *= matrices[p][i][j];
-    }
+//     // could be compile-time unrolled into 32 iterations
+//     for (int t=0; t<numPaulisPerMask; t++) {
+//         int p = getTwoAdjacentBits(str.highPaulis, 2*t);
+//         int i = getBit(row, t + numPaulisPerMask);
+//         int j = getBit(col, t + numPaulisPerMask);
+//         elem *= matrices[p][i][j];
+//     }
 
-    return elem;
-}
+//     return elem;
+// }
 
 
-// T = qcomp, cpu_qcomp, gpu_qcomp
-template <typename T>
-INLINE T fast_getPauliStrSumElem(T* coeffs, PauliStr* strings, qindex numTerms, qindex row, qindex col) {
+// // T = qcomp, cpu_qcomp, gpu_qcomp
+// template <typename T>
+// INLINE T fast_getPauliStrSumElem(T* coeffs, PauliStr* strings, qindex numTerms, qindex row, qindex col) {
 
-    // this function accepts unpacked PauliStrSum fields since a PauliStrSum cannot 
-    // be directly processed in CUDA kernels/thrust due to its 'qcomp' field.
-    // it also assumes str.highPaulis==0 for all str in strings, as per above func.
+//     // this function accepts unpacked PauliStrSum fields since a PauliStrSum cannot 
+//     // be directly processed in CUDA kernels/thrust due to its 'qcomp' field.
+//     // it also assumes str.highPaulis==0 for all str in strings, as per above func.
 
-    T elem = {0, 0}; // type-agnostic complex literal
+//     T elem = {0, 0}; // type-agnostic complex literal
 
-    // this loop is expected exponentially smaller than caller's loop
-    for (qindex n=0; n<numTerms; n++)
-        elem += coeffs[n] * fast_getPauliStrElem<T>(strings[n], row, col);
+//     // this loop is expected exponentially smaller than caller's loop
+//     for (qindex n=0; n<numTerms; n++)
+//         elem += coeffs[n] * fast_getPauliStrElem<T>(strings[n], row, col);
 
-    return elem;
-}
+//     return elem;
+// }
 
 
 #endif // FASTMATH_HPP
