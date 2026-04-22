@@ -1177,10 +1177,13 @@ template void cpu_densmatr_allTargDiagMatr_sub<true,  false, true,  false> (Qure
  */
 
 
+
+
+
 template <int NumTargs>
 INLINE void applyPauliUponAmpPair(
-    Qureg qureg, qindex v, qindex i0, int* indXY, int numXY, 
-    qindex maskXY, qindex maskYZ, qcomp ampFac, qcomp pairAmpFac
+    cpu_qcomp* amps, qindex v, qindex i0, int* indXY, int numXY, 
+    qindex maskXY, qindex maskYZ, cpu_qcomp ampFac, cpu_qcomp pairAmpFac
 ) {
     // this is a subroutine of cpu_statevector_anyCtrlPauliTensorOrGadget_subA() below
     // called in a hot-loop (hence it is here inlined) which exists because the caller
@@ -1198,12 +1201,11 @@ INLINE void applyPauliUponAmpPair(
     int signB = fast_getPlusOrMinusMaskedBitParity(iB, maskYZ);
 
     // mix or swap scaled amp pair (where pairAmpFac includes Y's i factor)
-    qcomp ampA = qureg.cpuAmps[iA];
-    qcomp ampB = qureg.cpuAmps[iB];
-    qureg.cpuAmps[iA] = (ampFac * ampA) + (pairAmpFac * signB * ampB);
-    qureg.cpuAmps[iB] = (ampFac * ampB) + (pairAmpFac * signA * ampA);
+    cpu_qcomp ampA = amps[iA];
+    cpu_qcomp ampB = amps[iB];
+    amps[iA] = (ampFac * ampA) + (pairAmpFac * signB * ampB);
+    amps[iB] = (ampFac * ampB) + (pairAmpFac * signA * ampA);
 }
-
 
 
 template <int NumCtrls, int NumTargs>
@@ -1213,6 +1215,14 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
 ) {
     assert_numCtrlsMatchesNumCtrlStatesAndTemplateParam(ctrls.size(), ctrlStates.size(), NumCtrls);
     assert_numTargsMatchesTemplateParam(x.size() + y.size(), NumTargs);
+
+    // we will scale pairAmp below by i^numY, so that each amp need only choose the +-1 sign
+    pairAmpFac *= util_getPowerOfI(y.size());
+
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp f0 = getCpuQcomp(ampFac);
+    cpu_qcomp f1 = getCpuQcomp(pairAmpFac);
     
     // only X and Y count as targets
     vector<int> sortedTargsXY = util_getSorted(util_getConcatenated(x, y));
@@ -1224,9 +1234,6 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
     // prepare masks for extracting Pauli parities
     auto maskXY = util_getBitMask(sortedTargsXY);
     auto maskYZ = util_getBitMask(util_getConcatenated(y, z));
-
-    // we will scale pairAmp below by i^numY, so that each amp need only choose the +-1 sign
-    pairAmpFac *= util_getPowerOfI(y.size());
 
     // use template params to compile-time unroll loops in insertBits() and inner-loop below
     SET_VAR_AT_COMPILE_TIME(int, numCtrlBits, NumCtrls, ctrls.size());
@@ -1263,7 +1270,7 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
             // serial
             for (qindex v=0; v<numInnerIts; v++)
                 applyPauliUponAmpPair<NumTargs>(
-                    qureg, v, i0, sortedTargsXY.data(), numTargBits, maskXY, maskYZ, ampFac, pairAmpFac);
+                    amps, v, i0, sortedTargsXY.data(), numTargBits, maskXY, maskYZ, f0, f1);
         }
 
     } else {
@@ -1278,10 +1285,15 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
             #pragma omp parallel for
             for (qindex v=0; v<numInnerIts; v++)
                 applyPauliUponAmpPair<NumTargs>(
-                    qureg, v, i0, sortedTargsXY.data(), numTargBits, maskXY, maskYZ, ampFac, pairAmpFac);
+                    amps, v, i0, sortedTargsXY.data(), numTargBits, maskXY, maskYZ, f0, f1);
         }
     }
 }
+
+
+
+
+
 
 
 template <int NumCtrls>
