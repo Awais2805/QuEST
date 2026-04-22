@@ -882,6 +882,10 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
     // each control qubit halves iterations, each of which modifies 2^(targs.size()) amplitudes
     qindex numIts = qureg.numAmpsPerNode / powerOf2(ctrls.size() + targs.size());
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElemsFlat);
+
     // prepare a mask which yields ctrls in specified state, and targs in all-zero
     auto sortedQubits   = util_getSorted(ctrls, targs);
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, targs, vector<int>(targs.size(),0));
@@ -898,7 +902,7 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
     #pragma omp parallel if(qureg.isMultithreaded)
     {
         // create a private cache for every thread (might be compile-time sized, and in heap or stack)
-        vector<qcomp> cache(numTargAmps);
+        vector<cpu_qcomp> cache(numTargAmps);
 
         #pragma omp for
         for (qindex n=0; n<numIts; n++) {
@@ -911,7 +915,7 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
 
                 // i = nth local index where ctrls are active and targs form value j
                 qindex i = setBits(i0, targs.data(), numTargBits, j); // loop may be unrolled
-                cache[j] = qureg.cpuAmps[i];
+                cache[j] = amps[i];
             }
 
             // modify each amplitude (loop might be unrolled)
@@ -919,7 +923,7 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
 
                 // i = nth local index where ctrls are active and targs form value k
                 qindex i = setBits(i0, targs.data(), numTargBits, k); // loop may be unrolled
-                qureg.cpuAmps[i] = 0;
+                amps[i] = getCpuQcomp(0, 0);
             
                 // loop may be unrolled
                 for (qindex j=0; j<numTargAmps; j++) {
@@ -930,22 +934,18 @@ void cpu_statevec_anyCtrlAnyTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
                         l = fast_getMatrixFlatIndex(j, k, numTargAmps);
                     else
                         l = fast_getMatrixFlatIndex(k, j, numTargAmps);
-
-                    qcomp elem = matr.cpuElemsFlat[l];
+                    cpu_qcomp elem = elems[l];
 
                     // optionally conjugate matrix elems on the fly to avoid pre-modifying heap structure
                     if constexpr (ApplyConj)
-                        elem = std::conj(elem);
+                        elem = conj(elem);
 
-                    qureg.cpuAmps[i] += elem * cache[j];
+                    amps[i] += elem * cache[j];
 
                     /// @todo
                     /// qureg.cpuAmps[i] is being serially updated by only this thread,
                     /// so is a candidate for Kahan summation for improved numerical
                     /// stability. Explore whether this is time-free and worthwhile!
-                    ///
-                    /// BEWARE that Kahan summation is incompatible with the optimisation
-                    /// flags currently passed to this file
                 }
             }
         }
