@@ -1062,6 +1062,12 @@ void cpu_statevec_anyCtrlAnyTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
     // each control qubit halves the needed iterations, each of which will modify 1 amplitude
     qindex numIts = qureg.numAmpsPerNode / powerOf2(ctrls.size());
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* elems = getCpuQcompPtr(matr.cpuElems);
+    cpu_qcomp expo   = getCpuQcomp(exponent);
+    (void) expo; // silence when unused
+
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
 
@@ -1080,7 +1086,7 @@ void cpu_statevec_anyCtrlAnyTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
 
         // t = value of targeted bits, which may be in the prefix substate
         qindex t = getValueOfBits(i, targs.data(), numTargBits);
-        qcomp elem = matr.cpuElems[t];
+        cpu_qcomp elem = elems[t];
 
         // decide whether to power and conj at compile-time, to avoid branching in hot-loop.
         // beware that pow(qcomp,qcomp) below gives notable error over pow(qreal,qreal) 
@@ -1088,13 +1094,13 @@ void cpu_statevec_anyCtrlAnyTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
         // and negative, and the exponent is an integer. We tolerate this heightened error
         // because we have no reason to think matr is real (it's not constrained Hermitian).
         if constexpr (HasPower)
-            elem = std::pow(elem, exponent);
+            elem = pow(elem, expo);
 
         // cautiously conjugate AFTER exponentiation, else we must also conj exponent
         if constexpr (ApplyConj)
-            elem = std::conj(elem);
+            elem = conj(elem);
 
-        qureg.cpuAmps[j] *= elem;
+        amps[j] *= elem;
     }
 }
 
