@@ -1217,14 +1217,14 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
     assert_numTargsMatchesTemplateParam(x.size() + y.size(), NumTargs);
 
         // // we will scale pairAmp below by i^numY, so that each amp need only choose the +-1 sign
-        // pairAmpFac *= util_getPowerOfI(y.size());
+        pairAmpFac *= util_getPowerOfI(y.size());
 
     // use cpu_qcomp arithmetic overloads (avoid qcomp's)
     cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
     cpu_qcomp f0 = getCpuQcomp(ampFac);
     cpu_qcomp f1 = getCpuQcomp(pairAmpFac);
 
-        f1 *= getCpuQcomp(util_getPowerOfI(y.size()));
+        // f1 *= getCpuQcomp(util_getPowerOfI(y.size()));
     
     // only X and Y count as targets
     vector<int> sortedTargsXY = util_getSorted(util_getConcatenated(x, y));
