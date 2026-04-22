@@ -28,6 +28,7 @@ on:
     branches:
       - main
       - devel
+      - msvc-failure-mwe-attempt
   pull_request:
     branches:
       - main
@@ -60,13 +61,13 @@ jobs:
 
       # compile QuEST with all combinations of below flags
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        precision: [1, 2, 4]
-        omp:       [ON, OFF]
-        mpi:       [ON, OFF]
-        cuda:      [ON, OFF]
-        hip:       [ON, OFF]
-        cuquantum: [ON, OFF]
+        os: [windows-latest]
+        precision: [1]
+        omp:       [ON]
+        mpi:       [OFF]
+        cuda:      [OFF]
+        hip:       [OFF]
+        cuquantum: [OFF]
         mpilib:    ['', 'mpich', 'ompi', 'impi', 'msmpi']
 
         # disable deprecated API on MSVC, and assign unique compilers,
