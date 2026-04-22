@@ -716,6 +716,15 @@ void cpu_statevec_anyCtrlTwoTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
     // each control qubit halves the needed iterations, and each iteration modifies four amplitudes
     qindex numIts = qureg.numAmpsPerNode / powerOf2(ctrls.size() + 2);
 
+
+
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
+    auto elems = getCpuQcompsMatrix<4>(matr.elems); // MSVC requires explicit template param, bah!
+
+
+
+
     auto sortedQubits   = util_getSorted(ctrls, {targ1, targ2});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ1, targ2}, {0, 0});
 
@@ -733,16 +742,16 @@ void cpu_statevec_anyCtrlTwoTargDenseMatr_sub(Qureg qureg, vector<int> ctrls, ve
         qindex i11 = flipBit(i01, targ2);
 
         // note amplitudes are not necessarily adjacent, nor uniformly spaced
-        qcomp amp00 = qureg.cpuAmps[i00];
-        qcomp amp01 = qureg.cpuAmps[i01];
-        qcomp amp10 = qureg.cpuAmps[i10];
-        qcomp amp11 = qureg.cpuAmps[i11];
+        cpu_qcomp amp00 = amps[i00];
+        cpu_qcomp amp01 = amps[i01];
+        cpu_qcomp amp10 = amps[i10];
+        cpu_qcomp amp11 = amps[i11];
 
-        // amps[i_n] = sum_j elems[n][j] amp[i_n]
-        qureg.cpuAmps[i00] = matr.elems[0][0]*amp00 + matr.elems[0][1]*amp01 + matr.elems[0][2]*amp10 + matr.elems[0][3]*amp11;
-        qureg.cpuAmps[i01] = matr.elems[1][0]*amp00 + matr.elems[1][1]*amp01 + matr.elems[1][2]*amp10 + matr.elems[1][3]*amp11;
-        qureg.cpuAmps[i10] = matr.elems[2][0]*amp00 + matr.elems[2][1]*amp01 + matr.elems[2][2]*amp10 + matr.elems[2][3]*amp11;
-        qureg.cpuAmps[i11] = matr.elems[3][0]*amp00 + matr.elems[3][1]*amp01 + matr.elems[3][2]*amp10 + matr.elems[3][3]*amp11;
+        // amps[i_n] = sum_j matr.elems[n][j] amp[i_n]
+        amps[i00] = elems[0][0]*amp00 + elems[0][1]*amp01 + elems[0][2]*amp10 + elems[0][3]*amp11;
+        amps[i01] = elems[1][0]*amp00 + elems[1][1]*amp01 + elems[1][2]*amp10 + elems[1][3]*amp11;
+        amps[i10] = elems[2][0]*amp00 + elems[2][1]*amp01 + elems[2][2]*amp10 + elems[2][3]*amp11;
+        amps[i11] = elems[3][0]*amp00 + elems[3][1]*amp01 + elems[3][2]*amp10 + elems[3][3]*amp11;
     }
 }
 
