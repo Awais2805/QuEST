@@ -634,6 +634,15 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subA(Qureg qureg, vector<int> ctrls, v
     // each control qubit halves the needed iterations, and each iteration modifies two amplitudes
     qindex numIts = qureg.numAmpsPerNode / powerOf2(ctrls.size() + 1);
 
+
+
+
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
+    auto elems = getCpuQcompsMatrix<2>(matr.elems); // MSVC requires explicit template param, bah!
+
+
+
     auto sortedQubits   = util_getSorted(ctrls, {targ});
     auto qubitStateMask = util_getBitMask(ctrls, ctrlStates, {targ}, {0});
 
@@ -649,11 +658,11 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subA(Qureg qureg, vector<int> ctrls, v
         qindex i1 = flipBit(i0, targ);
 
         // note the two amplitudes are likely strided and not adjacent (separated by 2^t)
-        qcomp amp0 = qureg.cpuAmps[i0];
-        qcomp amp1 = qureg.cpuAmps[i1];
+        cpu_qcomp amp0 = amps[i0];
+        cpu_qcomp amp1 = amps[i1];
 
-        qureg.cpuAmps[i0] = matr.elems[0][0]*amp0 + matr.elems[0][1]*amp1;
-        qureg.cpuAmps[i1] = matr.elems[1][0]*amp0 + matr.elems[1][1]*amp1;
+        amps[i0] = elems[0][0]*amp0 + elems[0][1]*amp1;
+        amps[i1] = elems[1][0]*amp0 + elems[1][1]*amp1;
     }
 }
 
