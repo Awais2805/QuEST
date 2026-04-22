@@ -768,6 +768,12 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subB(Qureg qureg, vector<int> ctrls, v
     // received amplitudes may begin at an arbitrary offset in the buffer
     qindex offset = getBufferRecvInd();
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps   = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* buffer = getCpuQcompPtr(qureg.cpuCommBuffer);
+    cpu_qcomp f0 = getCpuQcomp(fac0);
+    cpu_qcomp f1 = getCpuQcomp(fac1);
+
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
 
@@ -783,7 +789,7 @@ void cpu_statevec_anyCtrlOneTargDenseMatr_subB(Qureg qureg, vector<int> ctrls, v
         // j = index of nth received amplitude from pair rank in buffer
         qindex j = n + offset;
 
-        qureg.cpuAmps[i] = fac0*qureg.cpuAmps[i] + fac1*qureg.cpuCommBuffer[j];
+        amps[i] = f0*amps[i] + f1*buffer[j];
     }
 }
 
