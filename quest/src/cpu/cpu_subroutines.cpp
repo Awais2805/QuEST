@@ -1224,7 +1224,7 @@ void cpu_statevector_anyCtrlPauliTensorOrGadget_subA(
     cpu_qcomp f0 = getCpuQcomp(ampFac);
     cpu_qcomp f1 = getCpuQcomp(pairAmpFac);
 
-        f1 *= util_getPowerOfI(y.size());
+        f1 *= getCpuQcomp(util_getPowerOfI(y.size()));
     
     // only X and Y count as targets
     vector<int> sortedTargsXY = util_getSorted(util_getConcatenated(x, y));
