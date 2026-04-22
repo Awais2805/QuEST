@@ -62,7 +62,7 @@ jobs:
       # compile QuEST with all combinations of below flags
       matrix:
         os: [windows-latest]
-        precision: [1]
+        precision: [4]
         omp:       [ON]
         mpi:       [OFF]
         cuda:      [OFF]
