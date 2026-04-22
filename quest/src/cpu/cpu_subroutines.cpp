@@ -218,6 +218,84 @@ INLINE qcomp getQcomp(const base_qcomp& a) {
 
 
 
+INLINE base_qcomp DEBUG_fast_getPauliStrElem(PauliStr str, qindex row, qindex col) {
+
+    // this function is called by both fullstatediagmatr_setElemsToPauliStrSum()
+    // and densmatr_setAmpsToPauliStrSum_sub(). The former's PauliStr can have
+    // Paulis on any of the 64 sites, but the latter's PauliStr is always
+    // constrainted to the lower 32 sites (because a 32-qubit density matrix
+    // is already too large for the world's computers). As such, the latter
+    // scenario can be optimised since str.highPaulis == 0, making the second
+    // loop below redundant. Avoiding this loop can at most half the runtime,
+    // though opens the risk that the former caller erroneously has its upper
+    // Paulis ignore. We forego this optimisation in defensive design, and
+    // because this function is only invoked during data structure initilisation
+    // and ergo infrequently.s
+
+    // regrettably duplicated from paulis.cpp which is inaccessible here
+    constexpr int numPaulisPerMask = sizeof(PAULI_MASK_TYPE) * 8 / 2;
+
+    // QCOMP_ALIAS-agnostic literals
+    base_qcomp p0, p1,n1, pI,nI;
+    p0 = {0,  0}; //  0
+    p1 = {+1, 0}; //  1
+    n1 = {-1, 0}; // -1
+    pI = {0, +1}; //  i
+    nI = {0, -1}; // -i
+
+    // 'matrices' below is not declared constexpr or static const, even though
+    // it is fixed/known at compile-time, because this makes it incompatible
+    // with CUDA kernels/thrust. It is instead left as runtime innitialisation
+    // but this poses no real slowdown; this function, and its caller, are inlined
+    // so these 16 amps are re-processed one for each full enumeration of the
+    // PauliStrSum which is expected to have significantly more terms/coeffs
+    base_qcomp matrices[][2][2] = {
+        {{p1,p0},{p0,p1}},  // I
+        {{p0,p1},{p1,p0}},  // X
+        {{p0,nI},{pI,p0}},  // Y
+        {{p1,p0},{p0,n1}}}; // Z
+
+    base_qcomp elem = p1; // 1
+
+    // could be compile-time unrolled into 32 iterations
+    for (int t=0; t<numPaulisPerMask; t++) {
+        int p = getTwoAdjacentBits(str.lowPaulis, 2*t);
+        int i = getBit(row, t);
+        int j = getBit(col, t);
+        elem = elem * matrices[p][i][j]; // HIP-friendly avoiding *=
+    }
+
+    // could be compile-time unrolled into 32 iterations
+    for (int t=0; t<numPaulisPerMask; t++) {
+        int p = getTwoAdjacentBits(str.highPaulis, 2*t);
+        int i = getBit(row, t + numPaulisPerMask);
+        int j = getBit(col, t + numPaulisPerMask);
+        elem = elem * matrices[p][i][j];
+    }
+
+    return elem;
+}
+
+
+INLINE base_qcomp DEBUG_fast_getPauliStrSumElem(base_qcomp* coeffs, PauliStr* strings, qindex numTerms, qindex row, qindex col) {
+
+    // this function accepts unpacked PauliStrSum fields since a PauliStrSum cannot 
+    // be directly processed in CUDA kernels/thrust due to its 'qcomp' field.
+    // it also assumes str.highPaulis==0 for all str in strings, as per above func.
+
+    base_qcomp elem = {0, 0}; // type-agnostic literal
+
+    // this loop is expected exponentially smaller than caller's loop
+    for (qindex n=0; n<numTerms; n++)
+        elem = elem + coeffs[n] * DEBUG_fast_getPauliStrElem(strings[n], row, col); // += is HIP-incomaptible
+
+    return elem;
+}
+
+
+
+
+
 
 
 typedef base_qcomp cpu_qcomp;
@@ -345,6 +423,13 @@ void cpu_densmatr_setAmpsToPauliStrSum_sub(Qureg qureg, PauliStrSum sum) {
     qindex numIts = qureg.numAmpsPerNode;
     qindex dim = powerOf2(qureg.numQubits);
 
+
+
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* coeffs = getCpuQcompPtr(sum.coeffs);
+
+
     #pragma omp parallel for if(qureg.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
 
@@ -356,7 +441,7 @@ void cpu_densmatr_setAmpsToPauliStrSum_sub(Qureg qureg, PauliStrSum sum) {
         qindex c = fast_getQuregGlobalColFromFlatIndex(i, dim);
 
         // contains non-unrolled loop (and args unpacked due to CUDA qcomp incompatibility, grr)
-        qureg.cpuAmps[n] = fast_getPauliStrSumElem(sum.coeffs, sum.strings, sum.numTerms, r, c);
+        amps[n] = DEBUG_fast_getPauliStrSumElem(coeffs, sum.strings, sum.numTerms, r, c);
     }
 }
 
@@ -371,6 +456,10 @@ void cpu_fullstatediagmatr_setElemsToPauliStrSum(FullStateDiagMatr out, PauliStr
 
     int rank = out.isDistributed? comm_getRank() : 0;
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* inCoeffs = getCpuQcompPtr(in.coeffs);
+    cpu_qcomp* outElems = getCpuQcompPtr(out.cpuElems);
+
     #pragma omp parallel for if(out.isMultithreaded)
     for (qindex n=0; n<numIts; n++) {
 
@@ -381,7 +470,8 @@ void cpu_fullstatediagmatr_setElemsToPauliStrSum(FullStateDiagMatr out, PauliStr
         // contains I and Z which can in principle be computed faster; this
         // is a superfluous optimisation since this function is expected to
         // be called infrequently (i.e. only for data structure initialisation)
-        out.cpuElems[n] = fast_getPauliStrSumElem(in.coeffs, in.strings, in.numTerms, i, i);
+        outElems[n] = DEBUG_fast_getPauliStrSumElem(inCoeffs, in.strings, in.numTerms, i, i);
+
     }
 }
 
