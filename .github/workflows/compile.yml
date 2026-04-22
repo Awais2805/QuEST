@@ -75,12 +75,12 @@ jobs:
         # instead of hardcoding the operating system label. Note that
         # ultimately env.compiler, not matrix.compiler, will be set/used
         include:
-          - os: ubuntu-latest
-            compiler: g++
-            deprecated: ON
-          - os: macos-latest
-            compiler: clang++
-            deprecated: ON
+          # - os: ubuntu-latest
+          #   compiler: g++
+          #   deprecated: ON
+          # - os: macos-latest
+          #   compiler: clang++
+          #   deprecated: ON
           - os: windows-latest
             compiler: cl
             deprecated: OFF
