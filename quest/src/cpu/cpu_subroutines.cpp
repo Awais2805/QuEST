@@ -970,6 +970,10 @@ void cpu_statevec_anyCtrlOneTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
     // each control qubit halves the needed iterations, each of which will modify 1 amplitude
     qindex numIts = qureg.numAmpsPerNode / powerOf2(ctrls.size());
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* elems = getCpuQcompPtr(matr.elems);
+
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
 
@@ -986,7 +990,7 @@ void cpu_statevec_anyCtrlOneTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
         qindex i = concatenateBits(qureg.rank, j, qureg.logNumAmpsPerNode);
 
         int b = getBit(i, targ);
-        qureg.cpuAmps[j] *= matr.elems[b];
+        amps[j] *= elems[b];
     }
 }
 
@@ -1011,6 +1015,10 @@ void cpu_statevec_anyCtrlTwoTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
     auto sortedCtrls   = util_getSorted(ctrls);
     auto ctrlStateMask = util_getBitMask(ctrls, ctrlStates);
 
+    // use cpu_qcomp arithmetic overloads (avoid qcomp's)
+    cpu_qcomp* amps  = getCpuQcompPtr(qureg.cpuAmps);
+    cpu_qcomp* elems = getCpuQcompPtr(matr.elems);
+
     // use template params to compile-time unroll loops in insertBits()
     SET_VAR_AT_COMPILE_TIME(int, numCtrlBits, NumCtrls, ctrls.size());
 
@@ -1024,7 +1032,7 @@ void cpu_statevec_anyCtrlTwoTargDiagMatr_sub(Qureg qureg, vector<int> ctrls, vec
         qindex i = concatenateBits(qureg.rank, j, qureg.logNumAmpsPerNode);
 
         int k = getTwoBits(i, targ2, targ1);
-        qureg.cpuAmps[j] *= matr.elems[k];
+        amps[j] *= elems[k];
     }
 }
 
