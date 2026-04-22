@@ -45,6 +45,246 @@
 using std::vector;
 
 
+
+// DEBUG
+// trying to trigger MSVC stack overflow
+
+struct base_qcomp {
+
+    qreal re;
+    qreal im;
+
+
+    /*
+     * IN-PLACE COMPLEX ARITHMETIC
+     */
+    
+    INLINE base_qcomp& operator += (const base_qcomp& a) noexcept {
+        re += a.re;
+        im += a.im;
+        return *this;
+    }
+
+    INLINE base_qcomp& operator -= (const base_qcomp& a) noexcept {
+        re -= a.re;
+        im -= a.im;
+        return *this;
+    }
+
+    INLINE base_qcomp& operator *= (const base_qcomp& a) noexcept {
+        qreal re_ = re;
+        qreal im_ = im;
+        re = (re_ * a.re) - (im_ * a.im);
+        im = (re_ * a.im) + (im_ * a.re);
+        return *this;
+    }
+
+
+    /*
+     * IN-PLACE MIXED-TYPE ARITHMETIC
+     */
+
+    INLINE base_qcomp& operator *= (const int& a) noexcept {
+        re *= a;
+        im *= a;
+        return *this;
+    }
+
+    INLINE base_qcomp& operator *= (const qreal& a) noexcept {
+        re *= a;
+        im *= a;
+        return *this;
+    }
+
+    INLINE base_qcomp& operator *= (const size_t& a) noexcept {
+        re *= a;
+        im *= a;
+        return *this;
+    }
+
+}; // base_qcomp
+
+
+
+/*
+ * OUT-OF-PLACE COMPLEX ARITHMETIC
+ * 
+ * which avoid code duplication by re-using the
+ * in-place arithmetic operator overloads above
+ */
+
+INLINE base_qcomp operator + (base_qcomp a, const base_qcomp& b) noexcept {
+    a += b;
+    return a;
+}
+
+INLINE base_qcomp operator - (base_qcomp a, const base_qcomp& b) noexcept {
+    a -= b;
+    return a;
+}
+
+INLINE base_qcomp operator * (base_qcomp a, const base_qcomp& b) noexcept {
+    a *= b;
+    return a;
+}
+
+
+
+/*
+ * OUT-OF-PLACE MIXED-TYPE ARITHMETIC
+ * 
+ * which avoid code duplication by re-using the
+ * in-place arithmetic operator overloads above
+ */
+
+
+// base_qcomp * other
+
+INLINE base_qcomp operator * (base_qcomp a, const int& b) noexcept {
+    a *= b;
+    return a;
+}
+
+INLINE base_qcomp operator * (base_qcomp a, const qreal& b) noexcept {
+    a *= b;
+    return a;
+}
+
+INLINE base_qcomp operator * (base_qcomp a, const size_t& b) noexcept {
+    a *= b;
+    return a;
+}
+
+
+// other * base_qcomp (via commutation)
+
+INLINE base_qcomp operator * (const int& a, const base_qcomp& b) noexcept {
+    return b * a;
+}
+
+INLINE base_qcomp operator * (const qreal& a, const base_qcomp& b) noexcept {
+    return b * a;
+}
+
+INLINE base_qcomp operator * (const size_t& a, const base_qcomp& b) noexcept {
+    return b * a;
+}
+
+
+
+/*
+ * BACKEND-AGNOSTIC MATHS
+ */
+
+INLINE qreal real(const base_qcomp& a) {
+    return a.re;
+}
+
+INLINE qreal imag(const base_qcomp& a) {
+    return a.im;
+}
+
+INLINE base_qcomp conj(const base_qcomp& a) {
+    return {a.re, - a.im};
+}
+
+INLINE qreal norm(const base_qcomp& a) noexcept {
+    return (a.re * a.re) + (a.im * a.im);
+}
+
+
+
+/*
+ * CONVERTERS
+ */
+
+INLINE base_qcomp* getBaseQcompPtr(qcomp* list) {
+    return reinterpret_cast<base_qcomp*>(list);
+}
+
+INLINE base_qcomp getBaseQcomp(qreal re, qreal im) {
+    return { re, im };
+}
+
+INLINE base_qcomp getBaseQcomp(const qcomp& a) {
+    return { a.real(), a.imag() };
+}
+
+INLINE qcomp getQcomp(const base_qcomp& a) {
+    return qcomp( a.re, a.im );
+}
+
+
+
+
+
+
+
+typedef base_qcomp cpu_qcomp;
+
+
+
+/*
+ * CONVERTERS
+ *
+ * which merely wrap the base_qcomp functions for clarity
+ * in the CPU source code, disambiguating from gpu_qcomp
+ */
+
+INLINE cpu_qcomp* getCpuQcompPtr(qcomp* ptr) {
+    return getBaseQcompPtr(ptr);
+}
+
+INLINE cpu_qcomp getCpuQcomp(qreal re, qreal im) {
+    return getBaseQcomp(re, im);
+}
+
+INLINE cpu_qcomp getCpuQcomp(const qcomp& a) {
+    return getBaseQcomp(a);
+}
+
+
+template <int Dim>
+std::array<std::array<cpu_qcomp,Dim>,Dim> getCpuQcompsMatrix(qcomp matr[Dim][Dim]) {
+
+    // Creator for fixed-size dense matrices CompMatr1 and CompMatr2,
+    // which are respectively 2x2 and 4x4 - deliberately not inlined!
+    // We create new cpu_qcomp in lieu of reinterpreting a 2D pointer
+    // in fear of alignment and static array nightmares
+    static_assert(Dim == 2 || Dim == 4);
+
+    std::array<std::array<cpu_qcomp,Dim>,Dim> out;
+
+    for (int i=0; i<Dim; i++)
+        for (int j=0; j<Dim; j++)
+            out[i][j] = getCpuQcomp(matr[i][j]);
+
+    return out;
+}
+
+INLINE cpu_qcomp pow(cpu_qcomp base, cpu_qcomp expo) noexcept {
+
+    // Here, we re-use std::pow(std::complex) to avoid a custom definition,
+    // and so accept NaN-check performance penalties. Notice too we also
+    // create new qcomp(), rather than just reinterpreting the given cpu_qcomp,
+    // just to avoid any insiduous issues alignment/aliasing issues (since the
+    // creation time iss occluded by std::pow time).
+
+    qcomp base_ = getQcomp(base);
+    qcomp expo_ = getQcomp(expo);
+    qcomp out_ = std::pow(base_, expo_);
+    return getCpuQcomp(out_);
+}
+
+
+
+// END DEBUG
+
+
+
+
+
+
 /*
  * Beware that this file makes extensive use of std::complex (qcomp) operator
  * overloads and so requires additional compiler flags to achieve hand-rolled
