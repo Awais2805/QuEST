@@ -28,8 +28,6 @@
 
 #include <vector>
 
-using std::vector;
-
 
 /*
  * TEMPLATE INSTANTIATION MACROS
@@ -234,7 +232,7 @@ void accel_statevector_anyCtrlPauliTensorOrGadget_subB(Qureg qureg, SmallList ct
  * QUREG COMBINATION
  */
 
-void accel_statevec_setQuregToWeightedSum_sub(Qureg outQureg, vector<qcomp> coeffs, vector<Qureg> inQuregs);
+void accel_statevec_setQuregToWeightedSum_sub(Qureg outQureg, std::vector<qcomp> coeffs, std::vector<Qureg> inQuregs);
 
 void accel_densmatr_mixQureg_subA(qreal outProb, Qureg out, qreal inProb, Qureg in);
 void accel_densmatr_mixQureg_subB(qreal outProb, Qureg out, qreal inProb, Qureg in);

@@ -29,11 +29,12 @@
 #include "quest/src/cpu/cpu_subroutines.hpp"
 #include "quest/src/gpu/gpu_subroutines.hpp"
 
+#include <array>
 #include <vector>
 #include <algorithm>
 
-using std::vector;
 using std::min;
+using std::array;
 
 
 
@@ -76,30 +77,28 @@ using std::min;
 
 
 #define GET_FUNC_OPTIMISED_FOR_NUM_QUREGS(f, numquregs) \
-    (vector <decltype(&f<0>)> {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
+    (array {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
     [std::min((int) numquregs, MAX_OPTIMISED_NUM_QUREGS + 1)]
 
 #define GET_FUNC_OPTIMISED_FOR_NUM_CTRLS(f, numctrls) \
-    (vector <decltype(&f<0>)> {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
+    (array {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
     [std::min((int) numctrls, MAX_OPTIMISED_NUM_CTRLS + 1)]
 
 #define GET_FUNC_OPTIMISED_FOR_NUM_TARGS(f, numtargs) \
-    (vector <decltype(&f<0>)> {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
+    (array {&f<0>, &f<1>, &f<2>, &f<3>, &f<4>, &f<5>, &f<-1>}) \
     [std::min((int) numtargs, MAX_OPTIMISED_NUM_TARGS + 1)]
 
 #define GET_FUNC_OPTIMISED_FOR_NUM_CTRLS_AND_TARGS(f, numctrls, numtargs) \
-    (vector <ARR(f)> { \
-        ARR(f) {&f<0,0>,  &f<0,1>,  &f<0,2>,  &f<0,3>,  &f<0,4>,  &f<0,5>,  &f<0,-1>}, \
-        ARR(f) {&f<1,0>,  &f<1,1>,  &f<1,2>,  &f<1,3>,  &f<1,4>,  &f<1,5>,  &f<1,-1>}, \
-        ARR(f) {&f<2,0>,  &f<2,1>,  &f<2,2>,  &f<2,3>,  &f<2,4>,  &f<2,5>,  &f<2,-1>}, \
-        ARR(f) {&f<3,0>,  &f<3,1>,  &f<3,2>,  &f<3,3>,  &f<3,4>,  &f<3,5>,  &f<3,-1>}, \
-        ARR(f) {&f<4,0>,  &f<4,1>,  &f<4,2>,  &f<4,3>,  &f<4,4>,  &f<4,5>,  &f<4,-1>}, \
-        ARR(f) {&f<5,0>,  &f<5,1>,  &f<5,2>,  &f<5,3>,  &f<5,4>,  &f<5,5>,  &f<5,-1>}, \
-        ARR(f) {&f<-1,0>, &f<-1,1>, &f<-1,2>, &f<-1,3>, &f<-1,4>, &f<-1,5>, &f<-1,-1>}}) \
+    (array { \
+        array {&f<0,0>,  &f<0,1>,  &f<0,2>,  &f<0,3>,  &f<0,4>,  &f<0,5>,  &f<0,-1>}, \
+        array {&f<1,0>,  &f<1,1>,  &f<1,2>,  &f<1,3>,  &f<1,4>,  &f<1,5>,  &f<1,-1>}, \
+        array {&f<2,0>,  &f<2,1>,  &f<2,2>,  &f<2,3>,  &f<2,4>,  &f<2,5>,  &f<2,-1>}, \
+        array {&f<3,0>,  &f<3,1>,  &f<3,2>,  &f<3,3>,  &f<3,4>,  &f<3,5>,  &f<3,-1>}, \
+        array {&f<4,0>,  &f<4,1>,  &f<4,2>,  &f<4,3>,  &f<4,4>,  &f<4,5>,  &f<4,-1>}, \
+        array {&f<5,0>,  &f<5,1>,  &f<5,2>,  &f<5,3>,  &f<5,4>,  &f<5,5>,  &f<5,-1>}, \
+        array {&f<-1,0>, &f<-1,1>, &f<-1,2>, &f<-1,3>, &f<-1,4>, &f<-1,5>, &f<-1,-1>}}) \
     [std::min((int) numctrls, MAX_OPTIMISED_NUM_CTRLS + 1)] \
     [std::min((int) numtargs, MAX_OPTIMISED_NUM_TARGS + 1)]
-
-#define ARR(f) vector<decltype(&f<0,0>)>
 
 
 #define GET_CPU_OR_GPU_FUNC_OPTIMISED_FOR_NUM_QUREGS(funcsuffix, qureg, numquregs) \
@@ -135,18 +134,16 @@ using std::min;
 /// instances at the cost of increased code complexity/asymmetry. Consider!
 
 #define GET_TWO_BOOL_FUNC_OPTIMISED_FOR_NUM_CTRLS_AND_TARGS(f, numctrls, numtargs, c, h) \
-    (vector <POWER_CONJ_ARR(f)> { \
-        POWER_CONJ_ARR(f) {&f<0,0,c,h>,  &f<0,1,c,h>,  &f<0,2,c,h>,  &f<0,3,c,h>,  &f<0,4,c,h>,  &f<0,5,c,h>,  &f<0,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<1,0,c,h>,  &f<1,1,c,h>,  &f<1,2,c,h>,  &f<1,3,c,h>,  &f<1,4,c,h>,  &f<1,5,c,h>,  &f<1,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<2,0,c,h>,  &f<2,1,c,h>,  &f<2,2,c,h>,  &f<2,3,c,h>,  &f<2,4,c,h>,  &f<2,5,c,h>,  &f<2,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<3,0,c,h>,  &f<3,1,c,h>,  &f<3,2,c,h>,  &f<3,3,c,h>,  &f<3,4,c,h>,  &f<3,5,c,h>,  &f<3,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<4,0,c,h>,  &f<4,1,c,h>,  &f<4,2,c,h>,  &f<4,3,c,h>,  &f<4,4,c,h>,  &f<4,5,c,h>,  &f<4,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<5,0,c,h>,  &f<5,1,c,h>,  &f<5,2,c,h>,  &f<5,3,c,h>,  &f<5,4,c,h>,  &f<5,5,c,h>,  &f<5,-1,c,h>}, \
-        POWER_CONJ_ARR(f) {&f<-1,0,c,h>, &f<-1,1,c,h>, &f<-1,2,c,h>, &f<-1,3,c,h>, &f<-1,4,c,h>, &f<-1,5,c,h>, &f<-1,-1,c,h>}}) \
+    (array { \
+        array {&f<0,0,c,h>,  &f<0,1,c,h>,  &f<0,2,c,h>,  &f<0,3,c,h>,  &f<0,4,c,h>,  &f<0,5,c,h>,  &f<0,-1,c,h>}, \
+        array {&f<1,0,c,h>,  &f<1,1,c,h>,  &f<1,2,c,h>,  &f<1,3,c,h>,  &f<1,4,c,h>,  &f<1,5,c,h>,  &f<1,-1,c,h>}, \
+        array {&f<2,0,c,h>,  &f<2,1,c,h>,  &f<2,2,c,h>,  &f<2,3,c,h>,  &f<2,4,c,h>,  &f<2,5,c,h>,  &f<2,-1,c,h>}, \
+        array {&f<3,0,c,h>,  &f<3,1,c,h>,  &f<3,2,c,h>,  &f<3,3,c,h>,  &f<3,4,c,h>,  &f<3,5,c,h>,  &f<3,-1,c,h>}, \
+        array {&f<4,0,c,h>,  &f<4,1,c,h>,  &f<4,2,c,h>,  &f<4,3,c,h>,  &f<4,4,c,h>,  &f<4,5,c,h>,  &f<4,-1,c,h>}, \
+        array {&f<5,0,c,h>,  &f<5,1,c,h>,  &f<5,2,c,h>,  &f<5,3,c,h>,  &f<5,4,c,h>,  &f<5,5,c,h>,  &f<5,-1,c,h>}, \
+        array {&f<-1,0,c,h>, &f<-1,1,c,h>, &f<-1,2,c,h>, &f<-1,3,c,h>, &f<-1,4,c,h>, &f<-1,5,c,h>, &f<-1,-1,c,h>}}) \
     [std::min((int) numctrls, MAX_OPTIMISED_NUM_CTRLS + 1)] \
     [std::min((int) numtargs, MAX_OPTIMISED_NUM_TARGS + 1)]
-
-#define POWER_CONJ_ARR(f) vector<decltype(&f<0,0,false,false>)>
 
 #define GET_CPU_OR_GPU_TWO_BOOL_FUNC_OPTIMISED_FOR_NUM_CTRLS_AND_TARGS(funcsuffix, qureg, numctrls, numtargs, conj, haspower) \
     ((qureg.isGpuAccelerated)? \
@@ -549,7 +546,7 @@ void accel_statevector_anyCtrlAnyTargZOrPhaseGadget_sub(Qureg qureg, SmallList c
  */
 
 
-void accel_statevec_setQuregToWeightedSum_sub(Qureg outQureg, vector<qcomp> coeffs, vector<Qureg> inQuregs) {
+void accel_statevec_setQuregToWeightedSum_sub(Qureg outQureg, std::vector<qcomp> coeffs, std::vector<Qureg> inQuregs) {
 
     // consult outQureg's deployment since others are prior validated to match
     auto func = GET_CPU_OR_GPU_FUNC_OPTIMISED_FOR_NUM_QUREGS( statevec_setQuregToWeightedSum_sub, outQureg, inQuregs.size() );
