@@ -518,7 +518,7 @@ void applyMultiControlledS(Qureg qureg, int* controls, int numControls, int targ
 
 void applyMultiStateControlledS(Qureg qureg, int* controls, int* states, int numControls, int target) {
 
-    DiagMatr1 matr = getDiagMatr1({1, 1_i});
+    static const DiagMatr1 matr = getDiagMatr1({1, 1_i});
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matr, __func__);
 }
 
@@ -569,7 +569,7 @@ void applyMultiControlledT(Qureg qureg, int* controls, int numControls, int targ
 
 void applyMultiStateControlledT(Qureg qureg, int* controls, int* states, int numControls, int target) {
 
-    DiagMatr1 matr = getDiagMatr1({1, 1/std::sqrt(2) + 1_i/std::sqrt(2)});
+    static const DiagMatr1 matr = getDiagMatr1({1, (1 + 1_i)/std::sqrt(2)});
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matr, __func__);
 }
 
@@ -620,11 +620,11 @@ void applyMultiControlledHadamard(Qureg qureg, int* controls, int numControls, i
 
 void applyMultiStateControlledHadamard(Qureg qureg, int* controls, int* states, int numControls, int target) {
 
-    qcomp a = 1/std::sqrt(2);
-    CompMatr1 matr = getCompMatr1({
-        {a, a}, 
-        {a,-a}});
-
+    static const qcomp a = 1 / std::sqrt(2);
+    static const CompMatr1 matr = getCompMatr1({
+        {a,  a}, 
+        {a, -a}
+    });
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matr, __func__);
 }
 
@@ -749,7 +749,7 @@ void applyMultiStateControlledSqrtSwap(Qureg qureg, int* controls, int* states, 
 
     validate_mixedAmpsFitInNode(qureg, 2, __func__); // to throw SqrtSwap error, not generic CompMatr2 error
 
-    CompMatr2 matr = getCompMatr2({
+    static const CompMatr2 matr = getCompMatr2({
         {1, 0, 0, 0},
         {0, .5+.5_i, .5-.5_i, 0},
         {0, .5-.5_i, .5+.5_i, 0},
@@ -869,7 +869,7 @@ void applyMultiStateControlledPauliX(Qureg qureg, int* controls, int* states, in
     /// since it avoids all superfluous flops; check worthwhile for multi-qubit
 
     // harmlessly re-validates, including hardcoded matrix unitarity
-    CompMatr1 matrix = util_getPauliX();
+    static const CompMatr1 matrix = util_getPauliX();
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matrix, __func__);
 }
 
@@ -879,7 +879,7 @@ void applyMultiStateControlledPauliY(Qureg qureg, int* controls, int* states, in
     validate_controlStates(states, numControls, __func__); // permits states==nullptr
 
     // harmlessly re-validates, including hardcoded matrix unitarity
-    CompMatr1 matrix = util_getPauliY();
+    static const CompMatr1 matrix = util_getPauliY();
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matrix, __func__);
 }
 
@@ -889,7 +889,7 @@ void applyMultiStateControlledPauliZ(Qureg qureg, int* controls, int* states, in
     validate_controlStates(states, numControls, __func__); // permits states==nullptr
 
     // harmlessly re-validates, including hardcoded matrix unitarity
-    DiagMatr1 matrix = util_getPauliZ();
+    static const DiagMatr1 matrix = util_getPauliZ();
     validateAndApplyAnyCtrlAnyTargUnitaryMatrix(qureg, controls, states, numControls, &target, 1, matrix, __func__);
 }
 
@@ -1424,7 +1424,8 @@ void applyMultiQubitPhaseShift(Qureg qureg, int* targets, int numTargets, qreal 
     validate_targets(qureg, targets, numTargets, __func__);
 
     // treat as a (numTargets-1)-controlled 1-target diagonal matrix
-    DiagMatr1 matr = getDiagMatr1({1, std::exp(1_i * angle)});
+    static DiagMatr1 matr = getDiagMatr1({1, /*un-init*/ 0});
+    matr.elems[1] = std::exp(1_i * angle); // micro-optimisation
 
     // harmlessly re-validates
     applyMultiStateControlledDiagMatr1(qureg, &targets[1], nullptr, numTargets-1, targets[0], matr);
@@ -1467,7 +1468,7 @@ void applyMultiQubitPhaseFlip(Qureg qureg, int* targets, int numTargets) {
     validate_targets(qureg, targets, numTargets, __func__);
 
     // treat as a (numTargets-1)-controlled 1-target Pauli Z
-    DiagMatr1 matr = getDiagMatr1({1, -1});
+    static const DiagMatr1 matr = getDiagMatr1({1, -1});
 
     // harmlessly re-validates
     applyMultiStateControlledDiagMatr1(qureg, &targets[1], nullptr, numTargets-1, targets[0], matr);
