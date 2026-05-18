@@ -80,10 +80,6 @@
     template returntype funcname <-1,numtargs> args;
 
 
-#define INSTANTIATE_CONJUGABLE_FUNC_OPTIMISED_FOR_NUM_CTRLS_AND_TARGS(returntype, funcname, args) \
-    private_CONJUGABLE_INSTANTIATE_outer(returntype, funcname, true,  args) \
-    private_CONJUGABLE_INSTANTIATE_outer(returntype, funcname, false, args)
-
 #define private_CONJUGABLE_INSTANTIATE_outer(returntype, funcname, conj, args) \
     private_CONJUGABLE_INSTANTIATE_inner(returntype, funcname, 0, conj, args) \
     private_CONJUGABLE_INSTANTIATE_inner(returntype, funcname, 1, conj, args) \
