@@ -42,9 +42,7 @@
  */
 
 // must match the macros below, and those in accelerator.cpp
-#define MAX_OPTIMISED_NUM_CTRLS 5
-#define MAX_OPTIMISED_NUM_TARGS 5
-#define MAX_OPTIMISED_NUM_QUREGS 5
+#define MAX_OPTIMISED_PARAM 5
 
 
 #define INSTANTIATE_FUNC_OPTIMISED_FOR_NUM_TARGS(returntype, funcname, args) \
