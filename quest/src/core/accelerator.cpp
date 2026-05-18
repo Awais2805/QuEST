@@ -126,7 +126,7 @@ using std::array;
 
 #define GET_FUNC_OPTIMISED_FOR_TWO_PARAMS_TWO_BOOLS( outvar, funcname, param1, param2, bool1, bool2 ) \
     static constexpr auto (_MATRIX_##funcname) = GET_TWO_PARAM_TWO_BOOL_TEMPLATED_FUNC_MATRIX( funcname ); \
-    const auto outvar = (_MATRIX_##funcname)[GET_TEMPLATE_PARAM( param1 )][GET_TEMPLATE_PARAM( param2 )][bool1][bool2];
+    const auto outvar = (_MATRIX_##funcname)[bool1][bool2][GET_TEMPLATE_PARAM( param1 )][GET_TEMPLATE_PARAM( param2 )];
 
 #define GET_CPU_OR_GPU_FUNC_OPTIMISED_FOR_TWO_PARAMS_TWO_BOOLS( outvar, funcsuffix, qureg, param1, param2, bool1, bool2 ) \
     GET_FUNC_OPTIMISED_FOR_TWO_PARAMS_TWO_BOOLS( _GPU_FUNC, gpu_##funcsuffix, param1, param2, bool1, bool2 ) \
