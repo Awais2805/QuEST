@@ -1090,7 +1090,6 @@ void localiser_statevec_anyCtrlOneTargDiagMatr(Qureg qureg, SmallList ctrls, Sma
 
 
 void localiser_statevec_anyCtrlTwoTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, DiagMatr2 matr, bool conj) {
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // node has nothing to do if all local amps violate control condition
