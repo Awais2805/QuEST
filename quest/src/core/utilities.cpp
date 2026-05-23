@@ -90,18 +90,18 @@ bool util_isBraQubitInSuffix(int ketQubit, Qureg qureg) {
     return ketQubit < qureg.logNumColsPerNode;
 }
 
-SmallList getPrefixOrSuffixQubits(SmallList qubits, Qureg qureg, bool getSuffix) {
+SmallList getPrefixOrSuffixQubits(SmallView qubits, Qureg qureg, bool getSuffix) {
 
     // note that when the qureg is local/duplicated, 
     // all qubits will be suffix, none will be prefix
 
-    int newLength = 0;
+    SmallList out = list_getEmptySmallList();
+
     for (int qubit : qubits)
         if (util_isQubitInSuffix(qubit, qureg) == getSuffix)
-            qubits[newLength++] = qubit;
+            out.push_back(qubit);
 
-    qubits.resize(newLength);
-    return qubits;
+    return out;
 }
 
 std::array<SmallList,2> util_getPrefixAndSuffixQubits(SmallList qubits, Qureg qureg) {
@@ -157,50 +157,55 @@ int util_getRankWithBraQubitsFlipped(SmallList ketQubits, Qureg qureg) {
     return rank;
 }
 
-SmallList util_getBraQubits(SmallList ketQubits, Qureg qureg) {
+SmallList util_getBraQubits(SmallView ketQubits, Qureg qureg) {
 
-    for (int &qubit : ketQubits)
+    SmallList braQubits = ketQubits;
+
+    for (int &qubit : braQubits)
         qubit = util_getBraQubit(qubit, qureg);
 
-    return ketQubits;
+    return braQubits;
 }
 
-SmallList util_getNonTargetedQubits(SmallList targets, int numQubits) {
+SmallList util_getNonTargetedQubits(SmallView targets, int numQubits) {
     
     qindex mask = util_getBitMask(targets);
 
-    SmallList nonTargets = list_getEmptySmallList();
+    SmallList out = list_getEmptySmallList();
 
     for (int i=0; i<numQubits; i++)
         if (getBit(mask, i) == 0)
-            nonTargets.push_back(i);
+            out.push_back(i);
 
-    return nonTargets;
+    return out;
 }
 
-SmallList util_getConcatenated(SmallList list1, SmallList list2) {
+SmallList util_getConcatenated(SmallView list1, SmallView list2) {
 
+    auto out = list1;
     for (auto elem : list2)
-        list1.push_back(elem);
+        out.push_back(elem);
 
-    return list1;
+    return out;
 }
 
-SmallList util_getSorted(SmallList list) {
+SmallList util_getSorted(SmallView list) {
 
     // optimise common edgecases
     if (list.size() < 2)
         return list;
+    
+    SmallList out = list;
 
-    if (list.size() == 2) {
-        if (list[0] > list[1])
-            std::swap(list[0], list[1]);
-        return list;
+    if (out.size() == 2) {
+        if (out[0] > out[1])
+            std::swap(out[0], out[1]);
+        return out;
     }
 
     // fallback to inbuilt sort
-    std::sort(list.begin(), list.end());
-    return list;
+    std::sort(out.begin(), out.end());
+    return out;
 }
 
 SmallList util_getSorted(SmallList ctrls, SmallList targs) {
@@ -208,7 +213,7 @@ SmallList util_getSorted(SmallList ctrls, SmallList targs) {
     return util_getSorted(util_getConcatenated(ctrls, targs));
 }
 
-SmallList util_getSorted(SmallList ctrls, std::initializer_list<int> targs) {
+SmallList util_getSorted(SmallView ctrls, std::initializer_list<int> targs) {
 
     return util_getSorted(ctrls, list_getSmallList(targs));
 }
@@ -226,10 +231,7 @@ SmallList util_getRange(int maxExcl) {
 SmallList util_getConstantList(int elem, int length) {
 
     SmallList out = list_getEmptySmallList();
-
-    for (int i=0; i<length; i++)
-        out.push_back(elem);
-    
+    out.assign(length, elem);
     return out;
 }
 
