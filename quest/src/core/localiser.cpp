@@ -45,7 +45,7 @@ using std::tuple;
  */
 
 
-bool doesGateRequireComm(Qureg qureg, SmallList targs) {
+bool doesGateRequireComm(Qureg qureg, SmallView targs) {
 
     // non-distributed quregs never communicate (duh)
     if (!qureg.isDistributed)
@@ -61,7 +61,7 @@ bool doesGateRequireComm(Qureg qureg, int targ) {
 }
 
 
-bool doesChannelRequireComm(Qureg qureg, SmallList ketQubits) {
+bool doesChannelRequireComm(Qureg qureg, SmallView ketQubits) {
     if (!qureg.isDensityMatrix)
         error_localiserPassedStateVecToChannelComCheck();
 
@@ -77,7 +77,7 @@ bool doesChannelRequireComm(Qureg qureg, int ketQubit) {
 }
 
 
-bool doAnyLocalStatesHaveQubitValues(Qureg qureg, SmallList qubits, SmallList states) {
+bool doAnyLocalStatesHaveQubitValues(Qureg qureg, SmallView qubits, SmallView states) {
 
     // this answers the generic question of "do any of the given qubits lie in the
     // prefix substate with node-fixed values inconsistent with the given states?"
@@ -222,12 +222,11 @@ auto getQubitsSwappedToMaxSuffix(Qureg qureg, SmallView qubits) {
 }
 
 
-auto getNonSwappedCtrlsAndStates(SmallList oldCtrls, SmallList oldStates, SmallList newCtrls) {
+auto getNonSwappedCtrlsAndStates(SmallView oldCtrls, SmallView oldStates, SmallView newCtrls) {
 
     auto sameCtrls = list_getEmptySmallList();
     auto sameStates = list_getEmptySmallList();
 
-    for (size_t i=0; i<oldCtrls.size(); i++)
     for (size_t i=0; i<oldCtrls.size(); i++) {
         if (oldCtrls[i] == newCtrls[i]) {
             sameCtrls .push_back(oldCtrls[i]);
@@ -432,7 +431,7 @@ void freeSpoofedLocalStateVec(Qureg spoof, bool wasMemAlloc) {
  */
 
 
-void exchangeAmpsToBuffersWhereQubitsAreInStates(Qureg qureg, int pairRank, SmallList qubits, SmallList states) {
+void exchangeAmpsToBuffersWhereQubitsAreInStates(Qureg qureg, int pairRank, SmallView qubits, SmallView states) {
 
     // when there are no constraining qubits, all amps are exchanged; there is no need to pack the buffer.
     // this is typically triggered when a communicating localiser function is given no control qubits
@@ -825,7 +824,7 @@ void localiser_densmatr_initMixtureOfUniformlyRandomPureStates(Qureg qureg, qind
  */
 
 
-void anyCtrlSwapBetweenPrefixAndPrefix(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2) {
+void anyCtrlSwapBetweenPrefixAndPrefix(Qureg qureg, SmallView ctrls, SmallView ctrlStates, int targ1, int targ2) {
 
     int prefInd1 = util_getPrefixInd(targ1, qureg);
     int prefInd2 = util_getPrefixInd(targ2, qureg);
@@ -843,7 +842,7 @@ void anyCtrlSwapBetweenPrefixAndPrefix(Qureg qureg, SmallList ctrls, SmallList c
 }
 
 
-void anyCtrlSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int suffixTarg, int prefixTarg) {
+void anyCtrlSwapBetweenPrefixAndSuffix(Qureg qureg, SmallView ctrls, SmallView ctrlStates, int suffixTarg, int prefixTarg) {
 
     // every node exchanges at most half its amps; those where suffixTarg bit differs from rank's fixed prefixTarg bit
     int pairRank = util_getRankWithQubitFlipped(prefixTarg, qureg);
@@ -861,9 +860,9 @@ void anyCtrlSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallList c
 }
 
 
-
 void localiser_statevec_anyCtrlSwap(Qureg qureg, SmallView ctrls, SmallView ctrlStates, int targ1, int targ2) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
+    
     // ensure targ2 > targ1
     if (targ1 > targ2)
         std::swap(targ1, targ2);
@@ -894,7 +893,7 @@ void localiser_statevec_anyCtrlSwap(Qureg qureg, SmallView ctrls, SmallView ctrl
  */
 
 
-void anyCtrlMultiSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targsA, SmallList targsB) {
+void anyCtrlMultiSwapBetweenPrefixAndSuffix(Qureg qureg, SmallView ctrls, SmallView ctrlStates, SmallView targsA, SmallView targsB) {
 
     // this is an internal function called by the below routines which require
     // performing a sequence of SWAPs to reorder qubits, or move them into suffix.
@@ -929,7 +928,7 @@ void anyCtrlMultiSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallL
  */
 
 
-void anyCtrlOneTargDenseMatrOnPrefix(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ, CompMatr1 matr) {
+void anyCtrlOneTargDenseMatrOnPrefix(Qureg qureg, SmallView ctrls, SmallView ctrlStates, int targ, CompMatr1 matr) {
   
     int pairRank = util_getRankWithQubitFlipped(targ, qureg);
     exchangeAmpsToBuffersWhereQubitsAreInStates(qureg, pairRank, ctrls, ctrlStates);
@@ -976,7 +975,7 @@ void localiser_statevec_anyCtrlOneTargDenseMatr(Qureg qureg, SmallView ctrls, Sm
  */
 
 
-void anyCtrlTwoOrAnyTargDenseMatrOnSuffix(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, CompMatr2 matr, bool conj, bool transp) {
+void anyCtrlTwoOrAnyTargDenseMatrOnSuffix(Qureg qureg, SmallView ctrls, SmallView ctrlStates, SmallView targs, CompMatr2 matr, bool conj, bool transp) {
     if (conj) 
         matr = util_getConj(matr);
     if (transp)
@@ -1036,14 +1035,14 @@ void anyCtrlTwoOrAnyTargDenseMatr(Qureg qureg, SmallView ctrls, SmallView ctrlSt
 }
 
 
-void localiser_statevec_anyCtrlTwoTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, CompMatr2 matr, bool conj, bool transp) {
+void localiser_statevec_anyCtrlTwoTargDenseMatr(Qureg qureg, SmallView ctrls, SmallView ctrlStates, int targ1, int targ2, CompMatr2 matr, bool conj, bool transp) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     anyCtrlTwoOrAnyTargDenseMatr(qureg, ctrls, ctrlStates, list_getSmallList({targ1,targ2}), matr, conj, transp);
 }
 
 
-void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, CompMatr matr, bool conj, bool transp) {
+void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallView ctrls, SmallView ctrlStates, SmallView targs, CompMatr matr, bool conj, bool transp) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // despite our use of compile-time templating, the bespoke one-targ routines are still faster 
@@ -1205,7 +1204,7 @@ void localiser_densmatr_allTargDiagMatr(Qureg qureg, FullStateDiagMatr matr, qco
 
 
 template <class T>
-void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, T matr, bool conj) {
+void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg qureg, SmallView ctrls, SmallView ctrlStates, SmallView targs, T matr, bool conj) {
 
     // this function is never invoked by operations whch require transposing matr
     bool transp = false;
@@ -1223,12 +1222,12 @@ void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg qureg, SmallList ctrls, Smal
     if constexpr (util_isCompMatr2<T>()) localiser_statevec_anyCtrlTwoTargDenseMatr(qureg, ctrls, ctrlStates, targs[0], targs[1], matr, conj, transp);
 }
 
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, DiagMatr,  bool);
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, DiagMatr1, bool);
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, DiagMatr2, bool);
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, CompMatr,  bool);
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, CompMatr1, bool);
-template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallList, SmallList, CompMatr2, bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, DiagMatr,  bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, DiagMatr1, bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, DiagMatr2, bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, CompMatr,  bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, CompMatr1, bool);
+template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallView, SmallView, SmallView, CompMatr2, bool);
 
 
 
@@ -1307,7 +1306,7 @@ void anyCtrlPauliTensorOrGadget(Qureg qureg, SmallView allCtrls, SmallView allCt
 }
 
 
-void localiser_statevec_anyCtrlPauliTensor(Qureg qureg, SmallList ctrls, SmallList ctrlStates, PauliStr str, qcomp factor) {
+void localiser_statevec_anyCtrlPauliTensor(Qureg qureg, SmallView ctrls, SmallView ctrlStates, PauliStr str, qcomp factor) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // this function accepts a global factor, so that density matrices can effect conj(pauli)
@@ -1331,7 +1330,7 @@ void localiser_statevec_anyCtrlPauliTensor(Qureg qureg, SmallList ctrls, SmallLi
 }
 
 
-void localiser_statevec_anyCtrlPhaseGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, qcomp phase) {
+void localiser_statevec_anyCtrlPhaseGadget(Qureg qureg, SmallView ctrls, SmallView ctrlStates, SmallView targs, qcomp phase) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     bool isGadget = true;
@@ -1339,7 +1338,7 @@ void localiser_statevec_anyCtrlPhaseGadget(Qureg qureg, SmallList ctrls, SmallLi
 }
 
 
-void localiser_statevec_anyCtrlPauliGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, PauliStr str, qcomp phase) {
+void localiser_statevec_anyCtrlPauliGadget(Qureg qureg, SmallView ctrls, SmallView ctrlStates, PauliStr str, qcomp phase) {
     assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // when str=IZ, we must use the above bespoke algorithm
@@ -1673,7 +1672,7 @@ CompMatr getSpoofedCompMatrFromSuperOp(SuperOp op) {
 }
 
 
-void localiser_densmatr_superoperator(Qureg qureg, SuperOp op, SmallList ketTargs) {
+void localiser_densmatr_superoperator(Qureg qureg, SuperOp op, SmallView ketTargs) {
     assert_localiserGivenDensMatr(qureg);
 
     // effect the superoperator as a dense matrix on the ket + bra qubits
@@ -1687,7 +1686,7 @@ void localiser_densmatr_superoperator(Qureg qureg, SuperOp op, SmallList ketTarg
 }
 
 
-void localiser_densmatr_krausMap(Qureg qureg, KrausMap map, SmallList ketTargs) {
+void localiser_densmatr_krausMap(Qureg qureg, KrausMap map, SmallView ketTargs) {
     
     // Kraus map is simulated through its existing superoperator
     localiser_densmatr_superoperator(qureg, map.superop, ketTargs);
@@ -1700,7 +1699,7 @@ void localiser_densmatr_krausMap(Qureg qureg, KrausMap map, SmallList ketTargs) 
  */
 
 
-auto getNonTracedQubitOrder(Qureg qureg, SmallList originalTargs, SmallList revisedTargs) {
+auto getNonTracedQubitOrder(Qureg qureg, SmallView originalTargs, SmallView revisedTargs) {
 
     // get a list of all the qureg's qubits when treated as a statevector
     auto allQubits = util_getRange(2 * qureg.numQubits);
@@ -1737,7 +1736,7 @@ auto getNonTracedQubitOrder(Qureg qureg, SmallList originalTargs, SmallList revi
 }
 
 
-void reorderReducedQureg(Qureg inQureg, Qureg outQureg, SmallList allTargs, SmallList suffixTargs) {
+void reorderReducedQureg(Qureg inQureg, Qureg outQureg, SmallView allTargs, SmallView suffixTargs) {
 
     /// @todo 
     /// this function performs a sequence of SWAPs which are NOT necessarily upon disjoint qubits,
@@ -1768,14 +1767,14 @@ void reorderReducedQureg(Qureg inQureg, Qureg outQureg, SmallList allTargs, Smal
 }
 
 
-void partialTraceOnSuffix(Qureg inQureg, Qureg outQureg, SmallList ketTargs) {
+void partialTraceOnSuffix(Qureg inQureg, Qureg outQureg, SmallView ketTargs) {
 
     auto braTargs = util_getBraQubits(ketTargs, inQureg);
     accel_densmatr_partialTrace_sub(inQureg, outQureg, ketTargs, braTargs);
 }
 
 
-void partialTraceOnPrefix(Qureg inQureg, Qureg outQureg, SmallList ketTargs) {
+void partialTraceOnPrefix(Qureg inQureg, Qureg outQureg, SmallView ketTargs) {
 
     // all ketTargs (pre-sorted) are in the suffix, but one or more braTargs are in the prefix
     auto braTargs = util_getBraQubits(ketTargs, inQureg); // sorted
@@ -1800,7 +1799,7 @@ void partialTraceOnPrefix(Qureg inQureg, Qureg outQureg, SmallList ketTargs) {
 }
 
 
-void localiser_densmatr_partialTrace(Qureg inQureg, Qureg outQureg, SmallList targs) {
+void localiser_densmatr_partialTrace(Qureg inQureg, Qureg outQureg, SmallView targs) {
     assert_localiserPartialTraceGivenCompatibleQuregs(inQureg, outQureg, targs.size());
 
     // this function requires inQureg and outQureg are both or neither distributed;
@@ -2322,7 +2321,7 @@ void localiser_statevec_multiQubitProjector(Qureg qureg, SmallView qubits, Small
 }
 
 
-void localiser_densmatr_multiQubitProjector(Qureg qureg, SmallList qubits, SmallList outcomes, qreal prob) {
+void localiser_densmatr_multiQubitProjector(Qureg qureg, SmallView qubits, SmallView outcomes, qreal prob) {
     assert_localiserGivenDensMatr(qureg);
 
     // always embarrassingly parallel
