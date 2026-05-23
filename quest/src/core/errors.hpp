@@ -21,6 +21,8 @@
 #include "quest/include/qureg.h"
 #include "quest/include/matrices.h"
 
+#include "quest/src/core/small_list.hpp"
+
 #include <string>
 
 using std::string;
@@ -113,8 +115,6 @@ void assert_receiverCanFitSendersEntireElems(Qureg receiver, FullStateDiagMatr s
  * LOCALISER ERRORS
  */
 
-void error_localiserNumCtrlStatesInconsistentWithNumCtrls();
-
 void error_localiserGivenPauliTensorOrGadgetWithoutXOrY();
 
 void error_localiserPassedStateVecToChannelComCheck();
@@ -127,6 +127,8 @@ void error_localiserGivenPauliStrWithoutXorY();
 
 void error_localiserGivenNonUnityGlobalFactorToZTensor();
 
+void error_calcFidStateVecDistribWhileDensMatrLocal();
+
 void assert_localiserSuccessfullyAllocatedTempMemory(qcomp* ptr, bool isGpu);
 
 void assert_localiserGivenStateVec(Qureg qureg);
@@ -135,7 +137,8 @@ void assert_localiserGivenDensMatr(Qureg qureg);
 
 void assert_localiserPartialTraceGivenCompatibleQuregs(Qureg inQureg, Qureg outQureg, int numTargs);
 
-void error_calcFidStateVecDistribWhileDensMatrLocal();
+void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states);
+
 
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib);
 

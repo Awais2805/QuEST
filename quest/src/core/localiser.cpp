@@ -45,30 +45,6 @@ using std::tuple;
  */
 
 
-void assertValidCtrlStates(SmallList ctrls, SmallList ctrlStates) {
-
-    // providing no control states is always valid (to invoke default all-on-1)
-    if (ctrlStates.empty())
-        return;
-
-    // otherwise a state must be explicitly given for each ctrl
-    if (ctrlStates.size() != ctrls.size())
-        error_localiserNumCtrlStatesInconsistentWithNumCtrls();
-}
-
-
-void setDefaultCtrlStates(SmallList ctrls, SmallList &states) {
-
-    // no states necessary if there are no control qubits
-    if (ctrls.empty())
-        return;
-
-    // default ctrl state is all-1
-    if (states.empty())
-        states.assign(ctrls.size(), 1);
-}
-
-
 bool doesGateRequireComm(Qureg qureg, SmallList targs) {
 
     // non-distributed quregs never communicate (duh)
@@ -877,9 +853,8 @@ void anyCtrlSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallList c
 
 
 void localiser_statevec_anyCtrlSwap(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
 
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
     // ensure targ2 > targ1
     if (targ1 > targ2)
         std::swap(targ1, targ2);
@@ -1054,16 +1029,14 @@ void anyCtrlTwoOrAnyTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlSt
 
 
 void localiser_statevec_anyCtrlTwoTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, CompMatr2 matr, bool conj, bool transp) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
 
     anyCtrlTwoOrAnyTargDenseMatr(qureg, ctrls, ctrlStates, list_getSmallList({targ1,targ2}), matr, conj, transp);
 }
 
 
 void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, CompMatr matr, bool conj, bool transp) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
 
     // despite our use of compile-time templating, the bespoke one-targ routines are still faster 
     // than this any-targ routine when given a single target, because they can leverage a bespoke
@@ -1100,8 +1073,7 @@ void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallList ctrls, Sm
 
 
 void localiser_statevec_anyCtrlOneTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ, DiagMatr1 matr, bool conj) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1117,8 +1089,7 @@ void localiser_statevec_anyCtrlOneTargDiagMatr(Qureg qureg, SmallList ctrls, Sma
 
 
 void localiser_statevec_anyCtrlTwoTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, DiagMatr2 matr, bool conj) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1134,8 +1105,7 @@ void localiser_statevec_anyCtrlTwoTargDiagMatr(Qureg qureg, SmallList ctrls, Sma
 
 
 void localiser_statevec_anyCtrlAnyTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, DiagMatr matr, qcomp exponent, bool conj) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1260,8 +1230,6 @@ template void localiser_statevec_anyCtrlAnyTargAnyMatr(Qureg, SmallList, SmallLi
 
 
 void anyCtrlZTensorOrGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, bool isGadget, qcomp phase) {     
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1284,8 +1252,6 @@ void anyCtrlZTensorOrGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, 
 
 
 void anyCtrlPauliTensorOrGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, PauliStr str, qcomp ampFac, qcomp pairAmpFac) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
 
     // this routine is invalid for str=ZI
     if (!paulis_containsXOrY(str))

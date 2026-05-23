@@ -257,6 +257,16 @@ qindex util_getBitMask(SmallList ctrls, SmallList ctrlStates, std::initializer_l
     return util_getBitMask(ctrls, ctrlStates, list_getSmallList(targs), list_getSmallList(targStates));
 }
 
+SmallList util_getSmallListOrAllOnes(const int* elemsOrNullptr, size_t length) {
+
+    if (elemsOrNullptr != nullptr)
+        return list_getSmallList(elemsOrNullptr, length);
+
+    SmallList out = list_getEmptySmallList();
+    out.assign(length, 1);
+    return out;
+}
+
 
 
 /*

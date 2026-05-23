@@ -77,6 +77,8 @@ qindex util_getBitMask(SmallList qubits, SmallList states);
 qindex util_getBitMask(SmallList ctrls, SmallList ctrlStates, SmallList targs, SmallList targStates);
 qindex util_getBitMask(SmallList ctrls, SmallList ctrlStates, std::initializer_list<int> targs, std::initializer_list<int> targStates);
 
+SmallList util_getSmallListOrAllOnes(const int* elemsOrNullptr, size_t length);
+
 
 
 /*

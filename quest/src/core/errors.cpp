@@ -12,6 +12,7 @@
 #include "quest/include/qureg.h"
 #include "quest/include/matrices.h"
 
+#include "quest/src/core/small_list.hpp"
 #include "quest/src/core/printer.hpp"
 #include "quest/src/core/bitwise.hpp"
 #include "quest/src/core/memory.hpp"
@@ -243,11 +244,6 @@ void assert_receiverCanFitSendersEntireElems(Qureg receiver, FullStateDiagMatr s
  * LOCALISER ERRORS
  */
 
-void error_localiserNumCtrlStatesInconsistentWithNumCtrls() {
-
-    raiseInternalError("An inconsistent number of ctrls and ctrlStates were passed to a function in localiser.cpp.");
-}
-
 void error_localiserGivenPauliTensorOrGadgetWithoutXOrY() {
 
     raiseInternalError("The localiser was asked to simulate a Pauli tensor or gadget which contained no X or Y Paulis, which is a special case reserved for phase gadgets.");
@@ -276,6 +272,11 @@ void error_localiserGivenPauliStrWithoutXorY() {
 void error_localiserGivenNonUnityGlobalFactorToZTensor() {
 
     raiseInternalError("A localiser function to apply a PauliStr (as a tensor, not a gadget) was given a PauliStr containing only Z and I, along with a non-unity global factor. This is an illegal combination.");
+}
+
+void error_calcFidStateVecDistribWhileDensMatrLocal() {
+
+    raiseInternalError("A localiser function attempted to compute the fidelity between a local density matrix and a distributed statevector, which is an illegal combination.");
 }
 
 void assert_localiserSuccessfullyAllocatedTempMemory(qcomp* ptr, bool isGpu) {
@@ -314,9 +315,10 @@ void assert_localiserPartialTraceGivenCompatibleQuregs(Qureg inQureg, Qureg outQ
         raiseInternalError("Inconsistent Qureg sizes and number of traced qubits given to localiser's partial trace function.");
 }
 
-void error_calcFidStateVecDistribWhileDensMatrLocal() {
+void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states) {
 
-    raiseInternalError("A localiser function attempted to compute the fidelity between a local density matrix and a distributed statevector, which is an illegal combination.");
+    if (ctrls.size() != states.size())
+        raiseInternalError("An inconsistent number of ctrls and ctrlStates were passed to a function in localiser.cpp.");
 }
 
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib) {
