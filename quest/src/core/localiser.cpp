@@ -221,10 +221,12 @@ auto getNonSwappedCtrlsAndStates(SmallList oldCtrls, SmallList oldStates, SmallL
     auto sameStates = list_getEmptySmallList();
 
     for (size_t i=0; i<oldCtrls.size(); i++)
+    for (size_t i=0; i<oldCtrls.size(); i++) {
         if (oldCtrls[i] == newCtrls[i]) {
             sameCtrls .push_back(oldCtrls[i]);
             sameStates.push_back(oldStates[i]);
         }
+    }
 
     return tuple{sameCtrls, sameStates};
 }
@@ -854,7 +856,7 @@ void anyCtrlSwapBetweenPrefixAndSuffix(Qureg qureg, SmallList ctrls, SmallList c
 
 void localiser_statevec_anyCtrlSwap(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2) {
 
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
     // ensure targ2 > targ1
     if (targ1 > targ2)
         std::swap(targ1, targ2);
@@ -936,8 +938,7 @@ void anyCtrlOneTargDenseMatrOnPrefix(Qureg qureg, SmallList ctrls, SmallList ctr
 
 
 void localiser_statevec_anyCtrlOneTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ, CompMatr1 matr, bool conj, bool transp) {
-    assertValidCtrlStates(ctrls, ctrlStates);
-    setDefaultCtrlStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1029,14 +1030,14 @@ void anyCtrlTwoOrAnyTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlSt
 
 
 void localiser_statevec_anyCtrlTwoTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, CompMatr2 matr, bool conj, bool transp) {
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     anyCtrlTwoOrAnyTargDenseMatr(qureg, ctrls, ctrlStates, list_getSmallList({targ1,targ2}), matr, conj, transp);
 }
 
 
 void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, CompMatr matr, bool conj, bool transp) {
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // despite our use of compile-time templating, the bespoke one-targ routines are still faster 
     // than this any-targ routine when given a single target, because they can leverage a bespoke
@@ -1073,7 +1074,7 @@ void localiser_statevec_anyCtrlAnyTargDenseMatr(Qureg qureg, SmallList ctrls, Sm
 
 
 void localiser_statevec_anyCtrlOneTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ, DiagMatr1 matr, bool conj) {
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1090,6 +1091,7 @@ void localiser_statevec_anyCtrlOneTargDiagMatr(Qureg qureg, SmallList ctrls, Sma
 
 void localiser_statevec_anyCtrlTwoTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, int targ1, int targ2, DiagMatr2 matr, bool conj) {
     assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1105,7 +1107,7 @@ void localiser_statevec_anyCtrlTwoTargDiagMatr(Qureg qureg, SmallList ctrls, Sma
 
 
 void localiser_statevec_anyCtrlAnyTargDiagMatr(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, DiagMatr matr, qcomp exponent, bool conj) {
-    assert_localiserNumCtrlsMatchNumStates(ctrls, ctrlStates);
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // node has nothing to do if all local amps violate control condition
     if (!doAnyLocalStatesHaveQubitValues(qureg, ctrls, ctrlStates))
@@ -1298,6 +1300,7 @@ void anyCtrlPauliTensorOrGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStat
 
 
 void localiser_statevec_anyCtrlPauliTensor(Qureg qureg, SmallList ctrls, SmallList ctrlStates, PauliStr str, qcomp factor) {
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // this function accepts a global factor, so that density matrices can effect conj(pauli)
 
@@ -1321,6 +1324,7 @@ void localiser_statevec_anyCtrlPauliTensor(Qureg qureg, SmallList ctrls, SmallLi
 
 
 void localiser_statevec_anyCtrlPhaseGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, SmallList targs, qcomp phase) {
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     bool isGadget = true;
     anyCtrlZTensorOrGadget(qureg, ctrls, ctrlStates, targs, isGadget, phase);
@@ -1328,6 +1332,7 @@ void localiser_statevec_anyCtrlPhaseGadget(Qureg qureg, SmallList ctrls, SmallLi
 
 
 void localiser_statevec_anyCtrlPauliGadget(Qureg qureg, SmallList ctrls, SmallList ctrlStates, PauliStr str, qcomp phase) {
+    assert_localiserListLengthsAgree(ctrls.size(), ctrlStates.size());
 
     // when str=IZ, we must use the above bespoke algorithm
     if (!paulis_containsXOrY(str)) {
@@ -2288,7 +2293,7 @@ qreal localiser_densmatr_calcHilbertSchmidtDistance(Qureg quregA, Qureg quregB) 
 
 
 void localiser_statevec_multiQubitProjector(Qureg qureg, SmallList qubits, SmallList outcomes, qreal prob) {
-    assert_localiserNumQubitsMatchNumOutcomes(qubits, outcomes);
+    assert_localiserListLengthsAgree(qubits.size(), outcomes.size());
 
     // this routine is always embarrassingly parallel; however, we handle the
     // prefix-qubits here so that the backend can receive only the suffix qubits

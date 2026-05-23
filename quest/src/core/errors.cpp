@@ -12,7 +12,6 @@
 #include "quest/include/qureg.h"
 #include "quest/include/matrices.h"
 
-#include "quest/src/core/small_list.hpp"
 #include "quest/src/core/printer.hpp"
 #include "quest/src/core/bitwise.hpp"
 #include "quest/src/core/memory.hpp"
@@ -315,16 +314,10 @@ void assert_localiserPartialTraceGivenCompatibleQuregs(Qureg inQureg, Qureg outQ
         raiseInternalError("Inconsistent Qureg sizes and number of traced qubits given to localiser's partial trace function.");
 }
 
-void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states) {
+void assert_localiserListLengthsAgree(size_t length1, size_t length2) {
 
-    if (ctrls.size() != states.size())
-        raiseInternalError("An inconsistent number of ctrls and ctrlStates were passed to a function in localiser.cpp.");
-}
-
-void assert_localiserNumQubitsMatchNumOutcomes(SmallList qubits, SmallList outcomes) {
-
-    if (qubits.size() != outcomes.size())
-        raiseInternalError("An inconsistent number of qubits and outcomes were passed to a function in localiser.cpp.");
+    if (length1 != length2)
+        raiseInternalError("Two corresponding lists (such as ctrls & ctrlStates, or qubits & outcomes) passed to localiser.cpp differed in length.");
 }
 
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib) {

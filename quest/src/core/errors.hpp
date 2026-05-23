@@ -21,8 +21,6 @@
 #include "quest/include/qureg.h"
 #include "quest/include/matrices.h"
 
-#include "quest/src/core/small_list.hpp"
-
 #include <string>
 
 using std::string;
@@ -137,9 +135,7 @@ void assert_localiserGivenDensMatr(Qureg qureg);
 
 void assert_localiserPartialTraceGivenCompatibleQuregs(Qureg inQureg, Qureg outQureg, int numTargs);
 
-void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states);
-
-void assert_localiserNumQubitsMatchNumOutcomes(SmallList qubits, SmallList outcomes);
+void assert_localiserListLengthsAgree(size_t length1, size_t length2);
 
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib);
 
