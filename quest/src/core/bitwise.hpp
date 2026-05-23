@@ -371,7 +371,7 @@ INLINE qindex getIntegerFromBits(int* bits, int numBits) {
 }
 
 
-INLINE void getBitsFromInteger(int* bits, qindex number, int numBits) {
+INLINE void setToBitsOfInteger(int* bits, qindex number, int numBits) {
 
     for (int i=0; i<numBits; i++)
         bits[i] = getBit(number, i);
