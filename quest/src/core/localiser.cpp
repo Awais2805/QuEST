@@ -2288,6 +2288,7 @@ qreal localiser_densmatr_calcHilbertSchmidtDistance(Qureg quregA, Qureg quregB) 
 
 
 void localiser_statevec_multiQubitProjector(Qureg qureg, SmallList qubits, SmallList outcomes, qreal prob) {
+    assert_localiserNumQubitsMatchNumOutcomes(qubits, outcomes);
 
     // this routine is always embarrassingly parallel; however, we handle the
     // prefix-qubits here so that the backend can receive only the suffix qubits

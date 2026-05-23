@@ -321,6 +321,12 @@ void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states) {
         raiseInternalError("An inconsistent number of ctrls and ctrlStates were passed to a function in localiser.cpp.");
 }
 
+void assert_localiserNumQubitsMatchNumOutcomes(SmallList qubits, SmallList outcomes) {
+
+    if (qubits.size() != outcomes.size())
+        raiseInternalError("An inconsistent number of qubits and outcomes were passed to a function in localiser.cpp.");
+}
+
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib) {
 
     if (local.isDistributed || !distrib.isDistributed)

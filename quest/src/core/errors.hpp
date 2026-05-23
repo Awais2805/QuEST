@@ -139,6 +139,7 @@ void assert_localiserPartialTraceGivenCompatibleQuregs(Qureg inQureg, Qureg outQ
 
 void assert_localiserNumCtrlsMatchNumStates(SmallList ctrls, SmallList states);
 
+void assert_localiserNumQubitsMatchNumOutcomes(SmallList qubits, SmallList outcomes);
 
 void assert_localiserDistribQuregSpooferGivenValidQuregs(Qureg local, Qureg distrib);
 
