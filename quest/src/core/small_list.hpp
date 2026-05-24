@@ -8,7 +8,7 @@
  * CUDA memory writes before kernel launches!
  * 
  * This header also defines SmallView, which is
- * merely 'const SmallView&', to avoid superfluous
+ * merely 'const SmallList&', to avoid superfluous
  * stack copies when passing non-mutated SmallList.
  * 
  * The functions herein are inlined (in this header-
