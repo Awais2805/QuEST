@@ -235,9 +235,17 @@ TEST_CASE( "setQuESTSeeds", TEST_CATEGORY ) {
 
         SECTION( "number of seeds" ) {
 
+            unsigned seeds[] = { 0 };
             int numSeeds = GENERATE( -1, 0 );
 
-            REQUIRE_THROWS_WITH( setQuESTSeeds(nullptr, numSeeds), ContainsSubstring("Invalid number of random seeds") );
+            REQUIRE_THROWS_WITH( setQuESTSeeds(seeds, numSeeds), ContainsSubstring("Invalid number of random seeds") );
+        }
+
+        SECTION( "invalid pointer" ) {
+
+            int numSeeds = GENERATE( 1, 2 );
+
+            REQUIRE_THROWS_WITH( setQuESTSeeds(nullptr, numSeeds), ContainsSubstring("The given seeds list pointer is NULL") );
         }
 
         // inconsistency between nodes is permitted
