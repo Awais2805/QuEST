@@ -22,6 +22,7 @@
 #include <random>
 #include <limits>
 #include <vector>
+#include <algorithm>
 
 using std::vector;
 
@@ -65,14 +66,14 @@ void rand_setSeeds(vector<unsigned> seeds) {
 
     // all nodes learn root node's #seeds
     unsigned numRootSeeds = seeds.size();
-    if (comm_isInit())
+    if (comm_isActive())
         comm_broadcastUnsignedsFromRoot(&numRootSeeds, 1);
 
     // all nodes ensure they have space to receive root node's seeds
     seeds.resize(numRootSeeds);
     
     // all nodes receive root seeds
-    if (comm_isInit())
+    if (comm_isActive())
         comm_broadcastUnsignedsFromRoot(seeds.data(), seeds.size());
 
     // all nodes remember seeds (in case user wishes to later recall them)
@@ -271,18 +272,10 @@ qcomp rand_getThreadPrivateRandomAmp(std::mt19937_64 &gen, std::normal_distribut
 
 
 /*
- * PAULI STRINGS
+ * LIST SHUFFLING
  */
 
+void rand_setListToShuffled(vector<qindex>& list) {
 
-void rand_permutePauliStrSum(PauliStrSum &sum) {
-
-    // permute ordering of terms inplace using Fisher-Yates
-    for (qindex i = sum.numTerms - 1; i > 0; --i) {
-        std::uniform_int_distribution<qindex> distrib(0, i);
-        qindex j = distrib(mainGenerator);
-
-        std::swap(sum.coeffs[i], sum.coeffs[j]);
-        std::swap(sum.strings[i], sum.strings[j]);
-    }
+    std::shuffle(list.begin(), list.end(), mainGenerator);
 }

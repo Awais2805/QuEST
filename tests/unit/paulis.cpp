@@ -328,10 +328,14 @@ TEST_CASE( "createPauliStrSum", TEST_CATEGORY ) {
             REQUIRE_THROWS_WITH( createPauliStrSum(nullptr, nullptr, numTerms), ContainsSubstring("number of terms must be a positive integer") );
         }
 
+        SECTION( "overflows size_t" ) {
+
+            REQUIRE_THROWS_WITH( createPauliStrSum(nullptr, nullptr, 1LL << 60), ContainsSubstring("overflow size_t") );
+        }
+
         SECTION( "exceeds memory" ) {
 
-            // can choose even a number of terms so large that its size (in bytes) overflows
-            REQUIRE_THROWS_WITH( createPauliStrSum(nullptr, nullptr, 1LL << 60), ContainsSubstring("cannot fit in the available RAM") );
+            REQUIRE_THROWS_WITH( createPauliStrSum(nullptr, nullptr, 1LL << 50), ContainsSubstring("cannot fit in the available RAM") );
         }
 
         SECTION( "mismatching lengths" ) {
@@ -368,7 +372,7 @@ TEST_CASE( "createInlinePauliStrSum", TEST_CATEGORY ) {
 
         SECTION( "coefficient parsing" ) {
 
-            // beware that when FLOAT_PRECISION=1, qcomp cannot store smaller than 1E-37 (triggering a validation error)
+            // beware that when QUEST_FLOAT_PRECISION=1, qcomp cannot store smaller than 1E-37 (triggering a validation error)
             vector<std::string> strs = {"1 X", "0 X", "0.1 X", "5E2-1i X", "-1E-25i X",  "1 - 6E-5i X", "-1.5E-15  -   5.123E-30i  0"};
             vector<qcomp> coeffs     = { 1,     0,     0.1,     5E2-1_i,   -(1E-25)*1_i,  1 -(6E-5)*1_i, qcomp(-1.5E-15, -5.123E-30) };
 
@@ -425,7 +429,7 @@ TEST_CASE( "createInlinePauliStrSum", TEST_CATEGORY ) {
 
         SECTION( "out of range" ) {
 
-            // the max/min qcomp depend upon FLOAT_PRECISION but we'll lazily use something even quad-prec cannot store
+            // the max/min qcomp depend upon QUEST_FLOAT_PRECISION but we'll lazily use something even quad-prec cannot store
             REQUIRE_THROWS_WITH( createInlinePauliStrSum("-1E-9999 XYZ"), ContainsSubstring("exceeds the range which can be stored in a qcomp") );
         }
 
