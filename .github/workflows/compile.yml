@@ -47,6 +47,7 @@ jobs:
       ${{ matrix.cuda      == 'ON' && 'CUDA' || '' }}
       ${{ matrix.hip       == 'ON' && 'HIP'  || '' }}
       ${{ matrix.cuquantum == 'ON' && 'CUQ'  || '' }}
+      ${{ matrix.adios2    == 'ON' && 'CKPT' || '' }}
 
     runs-on: ${{ matrix.os }}
 
@@ -67,6 +68,7 @@ jobs:
         cuda:      [ON, OFF]
         hip:       [ON, OFF]
         cuquantum: [ON, OFF]
+        adios2:    [ON, OFF]
         mpilib:    ['', 'mpich', 'ompi', 'impi', 'msmpi']
 
         # disable deprecated API on MSVC, and assign unique compilers,
@@ -249,14 +251,16 @@ jobs:
           -DQUEST_ENABLE_CUDA=${{ matrix.cuda }}
           -DQUEST_ENABLE_HIP=${{ matrix.hip }}
           -DQUEST_ENABLE_CUQUANTUM=${{ matrix.cuquantum }}
+          -DQUEST_ENABLE_ADIOS2=${{ matrix.adios2 }}
           -DCMAKE_CUDA_ARCHITECTURES=${{ env.cuda_arch }}
           -DCMAKE_HIP_ARCHITECTURES=${{ env.hip_arch }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_CXX_FLAGS=${{ matrix.mpi == 'ON' && matrix.cuda == 'ON' && '-fno-lto' || '' }}
 
-      # force 'Release' build (needed by MSVC to enable optimisations)
+      # force 'Release' build (needed by MSVC to enable optimisations),
+      # and force serial compilation to avoid ADIOS2 OOM error
       - name: Compile
-        run: cmake --build ${{ env.build_dir }} --config Release --parallel
+        run: cmake --build ${{ env.build_dir }} --config Release --parallel 1
 
       # run all compiled isolated examples to test for link-time errors,
       # continuing if any fail (since some deliberately fail)
