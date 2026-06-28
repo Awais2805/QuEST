@@ -39,7 +39,11 @@ jobs:
   # test only compilation succeeds (no execution)
   build-test:
     name: >
-      ${{ matrix.os == 'ubuntu-latest' && 'Linux' || matrix.os == 'macos-latest' && 'MacOS' || 'Windows' }}
+      ${{ startsWith(matrix.os, 'ubuntu' ) && 'Linux'   || 
+          startsWith(matrix.os, 'macos'  ) && 'MacOS'   ||
+          startsWith(matrix.os, 'windows') && 'Windows' ||
+                                              'Unknown' }}
+      ${{ endsWith(matrix.os, 'intel') && '(Intel)' || '' }}
       [${{ matrix.precision }}]
       ${{ matrix.omp       == 'ON' && 'OMP'  || '' }}
       ${{ matrix.mpi       == 'ON' && 'MPI'  || '' }}
@@ -48,6 +52,7 @@ jobs:
       ${{ matrix.hip       == 'ON' && 'HIP'  || '' }}
       ${{ matrix.cuquantum == 'ON' && 'CUQ'  || '' }}
       ${{ matrix.adios2    == 'ON' && 'CKPT' || '' }}
+      ${{ matrix.bmi2      == 'ON' && 'BMI'  || '' }}
 
     runs-on: ${{ matrix.os }}
 
@@ -59,9 +64,10 @@ jobs:
       # (causes CUDA and MPI installation to fail on Windows)
       max-parallel: 8
 
-      # compile QuEST with all combinations of below flags
+      # compile QuEST with all combinations of below flags (Intel runners for BMI2 instrinsics);
+      # incredibly, this (with exclusions below) achieves 256 combos, which is the Github limit!
       matrix:
-        os: [windows-2022, ubuntu-latest, macos-latest]
+        os: [windows-2022, ubuntu-latest, macos-latest, macos-15-intel, macos-26-intel]
         precision: [1, 2, 4]
         omp:       [ON, OFF]
         mpi:       [ON, OFF]
@@ -69,6 +75,7 @@ jobs:
         hip:       [ON, OFF]
         cuquantum: [ON, OFF]
         adios2:    [ON, OFF]
+        bmi2:      [ON, OFF]
         mpilib:    ['', 'mpich', 'ompi', 'impi', 'msmpi']
 
         # disable deprecated API on MSVC, and assign unique compilers,
@@ -80,6 +87,12 @@ jobs:
             compiler: g++
             deprecated: ON
           - os: macos-latest
+            compiler: clang++
+            deprecated: ON
+          - os: macos-15-intel
+            compiler: clang++
+            deprecated: ON
+          - os: macos-26-intel
             compiler: clang++
             deprecated: ON
           - os: windows-2022
@@ -104,14 +117,42 @@ jobs:
           # cannot use GPU on MacOS
           - cuda: ON
             os: macos-latest
+          - cuda: ON
+            os: macos-15-intel
+          - cuda: ON
+            os: macos-26-intel
           - hip: ON
             os: macos-latest
+          - hip: ON
+            os: macos-15-intel
+          - hip: ON
+            os: macos-26-intel
 
           # cannot use cuquantum on Windows or MacOS
           - cuquantum: ON
             os: windows-2022
           - cuquantum: ON
             os: macos-latest
+          - cuquantum: ON
+            os: macos-15-intel
+          - cuquantum: ON
+            os: macos-26-intel
+
+          # cannot use BMI2 on non-Intel MacOS
+          - bmi2: ON
+            os: macos-latest
+
+          # use ONLY BMI2 on Intel MacOS, just to shrink matrix (Github imposes 256 max)
+          - bmi2: OFF
+            os: macos-15-intel
+          - bmi2: OFF
+            os: macos-26-intel
+
+          # do not combine BMI2 with MPI or ADIOS2 (they don't interact), just to shrink matrix
+          - bmi2: ON
+            mpi: ON
+          - bmi2: ON
+            adios2: ON
 
           # don't enumerate MPI libraries when not using MPI
           - mpi: OFF
@@ -131,6 +172,14 @@ jobs:
           - os: macos-latest
             mpilib: 'msmpi'    # MacOS:   [MPICH, OpenMPI]
           - os: macos-latest
+            mpilib: 'impi'
+          - os: macos-15-intel
+            mpilib: 'msmpi'
+          - os: macos-15-intel
+            mpilib: 'impi'
+          - os: macos-26-intel
+            mpilib: 'msmpi'
+          - os: macos-26-intel
             mpilib: 'impi'
           - os: windows-2022
             mpilib: 'mpich'    # Windows: [Intel MPI, MS MPI]
@@ -252,6 +301,7 @@ jobs:
           -DQUEST_ENABLE_HIP=${{ matrix.hip }}
           -DQUEST_ENABLE_CUQUANTUM=${{ matrix.cuquantum }}
           -DQUEST_ENABLE_ADIOS2=${{ matrix.adios2 }}
+          -DQUEST_ENABLE_BMI2=${{ matrix.bmi2 }}
           -DCMAKE_CUDA_ARCHITECTURES=${{ env.cuda_arch }}
           -DCMAKE_HIP_ARCHITECTURES=${{ env.hip_arch }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}

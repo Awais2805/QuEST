@@ -146,6 +146,15 @@ option(
 message(STATUS "NUMA awareness is turned ${QUEST_ENABLE_NUMA}. Set QUEST_ENABLE_NUMA to modify.")
 
 
+# BMI2
+option(
+  QUEST_ENABLE_BMI2
+  "Whether QuEST will accelerate CPU bit gather/scatter with x86 BMI2 (PEXT/PDEP) intrinsics."
+  OFF
+)
+message(STATUS "BMI2 bitwise acceleration is turned ${QUEST_ENABLE_BMI2}. Set QUEST_ENABLE_BMI2 to modify.")
+
+
 # Distribution
 option(
   QUEST_ENABLE_MPI
@@ -297,6 +306,46 @@ if ((NOT (quest_tpb_remainder EQUAL 0)) OR NOT (QUEST_DEFAULT_NUM_GPU_THREADS_PE
 endif()
 
 
+# probe whether BMI2 intrinsics are recognised by compiler
+if (QUEST_ENABLE_BMI2)
+
+  # save current CMAKE_REQUIRED_FLAGS for later restoration
+  set(_quest_saved_req_flags "${CMAKE_REQUIRED_FLAGS}")
+
+  # give probe compilation the bmi flag if exists (does not exist on MSVC)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-mbmi2" _quest_cxx_recognises_bmi2)
+  if (_quest_cxx_recognises_bmi2)
+    string(APPEND CMAKE_REQUIRED_FLAGS " -mbmi2")
+  endif()
+
+  # probe whether intrinsics compile
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles(
+    "
+    #include <immintrin.h>
+    int main() {
+        _pext_u64(0ULL, 0ULL);
+        _pdep_u64(0ULL, 0ULL);
+        return 0;
+    }
+    "
+    _quest_cxx_compiles_bmi2)
+
+  # restore CMAKE_REQUIRED_FLAS
+  set(CMAKE_REQUIRED_FLAGS "${_quest_saved_req_flags}")
+  unset(_quest_saved_req_flags)
+
+  # error if probe failed
+  if (NOT _quest_cxx_compiles_bmi2)
+    message(FATAL_ERROR "QUEST_ENABLE_BMI2 was ${QUEST_ENABLE_BMI2} but BMI2 intrinsics were not recognised by the compiler. ")
+  endif()
+
+  # var _quest_cxx_recognises_bmi2 used later during BMI2 management 
+
+endif()
+
+
 # warn when numTPB will be later overridden by the current environment variable
 if(
   DEFINED ENV{QUEST_DEFAULT_NUM_GPU_THREADS_PER_BLOCK} 
@@ -342,7 +391,7 @@ if (QUEST_APPEND_CONFIG_TO_LIB_NAME)
   string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "-fp${QUEST_FLOAT_PRECISION}")
 
   if (QUEST_ENABLE_OMP)
-    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+mt")
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+omp")
   endif()
 
   if (QUEST_ENABLE_MPI)
@@ -363,6 +412,18 @@ if (QUEST_APPEND_CONFIG_TO_LIB_NAME)
 
   if (QUEST_ENABLE_DEPRECATED_API)
     string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+depr")
+  endif()
+
+  if (QUEST_ENABLE_BMI2)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+bmi2")
+  endif()
+
+  if (QUEST_ENABLE_ADIOS2)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+adios2")
+  endif()
+
+  if (QUEST_ENABLE_SUBCOMM)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+subcomm")
   endif()
 
 endif()
@@ -556,7 +617,6 @@ if (QUEST_ENABLE_CUQUANTUM)
 endif()
 
 
-
 # Checkpointing (ADIOS2)
 if (QUEST_ENABLE_ADIOS2)
 
@@ -631,6 +691,13 @@ if (QUEST_ENABLE_ADIOS2)
 endif()
 
 
+# BMI2 (flag not necessary when unrecognised)
+if (QUEST_ENABLE_BMI2 AND _quest_cxx_recognises_bmi2)
+  target_compile_options(QuEST PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-mbmi2>)
+endif()
+
+
 
 # ===============================
 # Set options to save in config.h
@@ -643,6 +710,7 @@ set(QUEST_COMPILE_MPI ${QUEST_ENABLE_MPI})
 set(QUEST_COMPILE_SUBCOMM ${QUEST_ENABLE_SUBCOMM})
 set(QUEST_COMPILE_CUQUANTUM ${QUEST_ENABLE_CUQUANTUM})
 set(QUEST_COMPILE_ADIOS2 ${QUEST_ENABLE_ADIOS2})
+set(QUEST_COMPILE_BMI2 ${QUEST_ENABLE_BMI2})
 set(QUEST_INCLUDE_DEPRECATED_FUNCTIONS ${QUEST_ENABLE_DEPRECATED_API})
 
 
