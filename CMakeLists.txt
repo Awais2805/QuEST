@@ -146,6 +146,15 @@ option(
 message(STATUS "NUMA awareness is turned ${QUEST_ENABLE_NUMA}. Set QUEST_ENABLE_NUMA to modify.")
 
 
+# BMI2
+option(
+  QUEST_ENABLE_BMI2
+  "Whether QuEST will accelerate CPU bit gather/scatter with x86 BMI2 (PEXT/PDEP) intrinsics."
+  OFF
+)
+message(STATUS "BMI2 bitwise acceleration is turned ${QUEST_ENABLE_BMI2}. Set QUEST_ENABLE_BMI2 to modify.")
+
+
 # Distribution
 option(
   QUEST_ENABLE_MPI
@@ -187,7 +196,6 @@ message(STATUS "AMD GPU acceleration is turned ${QUEST_ENABLE_HIP}. Set QUEST_EN
 
 # GPU Performance Tuning
 # (We do not print this value when configuring CMake as it is for advanced users only)
-
 set(quest_tpb_description # (the games we play for multi-line set() strings!)
   "The default number of threads per block QuEST will use when offloading to a GPU. Set to 128 by default. "
   "Must be a multiple of 32 (on NVIDIA GPUs) or 64 (on AMD GPUs). Can be overridden at executable launch "
@@ -197,6 +205,21 @@ set(QUEST_DEFAULT_NUM_GPU_THREADS_PER_BLOCK 128
   CACHE STRING
   "${quest_tpb_description}")
 mark_as_advanced(QUEST_DEFAULT_NUM_GPU_THREADS_PER_BLOCK)
+
+
+# Checkpointing with ADIOS2
+option(
+  QUEST_ENABLE_ADIOS2
+  "Whether QuEST will be built with ADIOS2, enabling checkpointing (via saveQuregToFile / createQuregFromFile). Turned OFF by default."
+  OFF
+)
+message(STATUS "ADIOS2 integration is turned ${QUEST_ENABLE_ADIOS2}. Set QUEST_ENABLE_ADIOS2 to modify.")
+
+option(
+  QUEST_DOWNLOAD_ADIOS2
+  "Whether ADIOS2 will be downloaded if it is enabled but not found. Turned ON by default."
+  ON
+)
 
 
 # Deprecated API
@@ -283,6 +306,46 @@ if ((NOT (quest_tpb_remainder EQUAL 0)) OR NOT (QUEST_DEFAULT_NUM_GPU_THREADS_PE
 endif()
 
 
+# probe whether BMI2 intrinsics are recognised by compiler
+if (QUEST_ENABLE_BMI2)
+
+  # save current CMAKE_REQUIRED_FLAGS for later restoration
+  set(_quest_saved_req_flags "${CMAKE_REQUIRED_FLAGS}")
+
+  # give probe compilation the bmi flag if exists (does not exist on MSVC)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-mbmi2" _quest_cxx_recognises_bmi2)
+  if (_quest_cxx_recognises_bmi2)
+    string(APPEND CMAKE_REQUIRED_FLAGS " -mbmi2")
+  endif()
+
+  # probe whether intrinsics compile
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles(
+    "
+    #include <immintrin.h>
+    int main() {
+        _pext_u64(0ULL, 0ULL);
+        _pdep_u64(0ULL, 0ULL);
+        return 0;
+    }
+    "
+    _quest_cxx_compiles_bmi2)
+
+  # restore CMAKE_REQUIRED_FLAS
+  set(CMAKE_REQUIRED_FLAGS "${_quest_saved_req_flags}")
+  unset(_quest_saved_req_flags)
+
+  # error if probe failed
+  if (NOT _quest_cxx_compiles_bmi2)
+    message(FATAL_ERROR "QUEST_ENABLE_BMI2 was ${QUEST_ENABLE_BMI2} but BMI2 intrinsics were not recognised by the compiler. ")
+  endif()
+
+  # var _quest_cxx_recognises_bmi2 used later during BMI2 management 
+
+endif()
+
+
 # warn when numTPB will be later overridden by the current environment variable
 if(
   DEFINED ENV{QUEST_DEFAULT_NUM_GPU_THREADS_PER_BLOCK} 
@@ -328,7 +391,7 @@ if (QUEST_APPEND_CONFIG_TO_LIB_NAME)
   string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "-fp${QUEST_FLOAT_PRECISION}")
 
   if (QUEST_ENABLE_OMP)
-    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+mt")
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+omp")
   endif()
 
   if (QUEST_ENABLE_MPI)
@@ -349,6 +412,18 @@ if (QUEST_APPEND_CONFIG_TO_LIB_NAME)
 
   if (QUEST_ENABLE_DEPRECATED_API)
     string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+depr")
+  endif()
+
+  if (QUEST_ENABLE_BMI2)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+bmi2")
+  endif()
+
+  if (QUEST_ENABLE_ADIOS2)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+adios2")
+  endif()
+
+  if (QUEST_ENABLE_SUBCOMM)
+    string(CONCAT QUEST_OUTPUT_LIB_NAME ${QUEST_OUTPUT_LIB_NAME} "+subcomm")
   endif()
 
 endif()
@@ -542,6 +617,87 @@ if (QUEST_ENABLE_CUQUANTUM)
 endif()
 
 
+# Checkpointing (ADIOS2)
+if (QUEST_ENABLE_ADIOS2)
+
+  find_package(adios2 QUIET)
+
+  # A distributed QuEST needs an MPI-enabled ADIOS2 (which provides the
+  # adios2::cxx_mpi target). A serial system install lacks it, so in that case we
+  # ignore the found package and fetch an MPI-enabled build instead of failing.
+  set(quest_use_found_adios2 ${adios2_FOUND})
+  if (adios2_FOUND AND QUEST_ENABLE_MPI AND NOT TARGET adios2::cxx_mpi)
+    message(STATUS "Found ADIOS2 lacks MPI support (no adios2::cxx_mpi target); fetching an MPI-enabled build instead")
+    set(quest_use_found_adios2 FALSE)
+  endif()
+
+  if(NOT quest_use_found_adios2 AND QUEST_DOWNLOAD_ADIOS2)
+    message(STATUS "fetching ADIOS2 via FetchContent")
+
+    include(FetchContent)
+    FetchContent_Declare(
+      adios2
+      GIT_REPOSITORY https://github.com/ornladios/ADIOS2.git
+      GIT_TAG v2.12.1
+    )
+
+    # Match ADIOS2's MPI to QuEST's so distributed runs write per-rank slices
+    # into one shared file. ADIOS2's CUDA support is deliberately left OFF:
+    # checkpointing copies amps to host memory (syncQuregFromGpu/syncQuregToGpu)
+    # before any I/O, so ADIOS2 never touches device pointers. Building it with
+    # CUDA is unnecessary and stalls the Windows CUDA CI job.
+    set(ADIOS2_USE_MPI  ${QUEST_ENABLE_MPI} CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_CUDA OFF CACHE BOOL "" FORCE)
+
+    # Forego unused facilities
+    set(ADIOS2_BUILD_TESTING  OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_SODIUM     OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Fortran    OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_HDF5       OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_ZeroMQ     OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_SST        OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_DataMan    OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_SSC        OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_MHS        OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_DAOS       OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_MGARD      OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_BZip2      OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Blosc      OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Blosc2     OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_SZ         OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_ZFP        OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_PNG        OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Profiling  OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Python     OFF CACHE BOOL "" FORCE)
+
+    FetchContent_MakeAvailable(adios2)
+
+  else()
+    # re-run non-QUIET so configuration fails with a clear error if the package
+    # somehow became unavailable between the two calls
+    find_package(adios2 REQUIRED)
+  endif()
+
+  # In distributed builds link ADIOS2's MPI-enabled C++ interface: it defines
+  # ADIOS2_USE_MPI, which exposes the adios2::ADIOS(MPI_Comm) constructor used in
+  # qureg.cpp for collective per-rank I/O. The serial target lacks it.
+  if (QUEST_ENABLE_MPI)
+    target_link_libraries(QuEST PRIVATE adios2::cxx_mpi)
+  else()
+    target_link_libraries(QuEST PRIVATE adios2::cxx)
+  endif()
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+endif()
+
+
+# BMI2 (flag not necessary when unrecognised)
+if (QUEST_ENABLE_BMI2 AND _quest_cxx_recognises_bmi2)
+  target_compile_options(QuEST PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-mbmi2>)
+endif()
+
+
 
 # ===============================
 # Set options to save in config.h
@@ -553,6 +709,8 @@ set(QUEST_COMPILE_OMP ${QUEST_ENABLE_OMP})
 set(QUEST_COMPILE_MPI ${QUEST_ENABLE_MPI})
 set(QUEST_COMPILE_SUBCOMM ${QUEST_ENABLE_SUBCOMM})
 set(QUEST_COMPILE_CUQUANTUM ${QUEST_ENABLE_CUQUANTUM})
+set(QUEST_COMPILE_ADIOS2 ${QUEST_ENABLE_ADIOS2})
+set(QUEST_COMPILE_BMI2 ${QUEST_ENABLE_BMI2})
 set(QUEST_INCLUDE_DEPRECATED_FUNCTIONS ${QUEST_ENABLE_DEPRECATED_API})
 
 
