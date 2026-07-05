@@ -56,7 +56,7 @@ extern "C" {
  *
  * - Parameter @p prob must be a valid probability and ergo satisfy @f$ 0 \le p \le 1 @f$
  *   unless validation is disabled via setQuESTValidationOff(), which permits quasi-probability
- *   channels with even negative probabilities.
+ *   channels with, for example, negative probabilities.
  * - The maximum permitted error probability is @f$ p = 1/2 @f$ (unless validation is disabled)
  *   at which the qubit becomes completely "dephased", and the off-diagonal "coherences" become zero.
  * - With validation disabled, the channel remains CPTP for @f$ 1/2 \le p \le 1 @f$.
@@ -137,7 +137,7 @@ void mixDephasing(Qureg qureg, int target, qreal prob);
  *
  * - Parameter @p prob must be a valid probability and ergo satisfy @f$ 0 \le p \le 1 @f$
  *   unless validation is disabled via setQuESTValidationOff(), which permits quasi-probability
- *   channels with even negative probabilities.
+ *   channels with, for example, negative probabilities.
  * - The maximum permitted error probability is @f$ p = 3/4 @f$ (unless validation is disabled),
  *   at which the channel is "maximum strength" and the off-diagonal "coherences" of the two qubits
  *   become zero.
@@ -209,7 +209,7 @@ void mixTwoQubitDephasing(Qureg qureg, int target1, int target2, qreal prob);
  *
  * - Parameter @p prob must be a valid probability and ergo satisfy @f$ 0 \le p \le 1 @f$
  *   unless validation is disabled via setQuESTValidationOff(), which permits quasi-probability
- *   channels with even negative probabilities.
+ *   channels with, for example, negative probabilities.
  * - The maximum permitted error probability is @f$ p = 3/4 @f$ (unless validation is disabled),
  *   at which the channel is maximum strength, and the qubit enters the maximally mixed state.
  * - With validation disabled, the channel remains CPTP for @f$ 3/4 \le p \le 1 @f$.
@@ -316,7 +316,7 @@ void mixDepolarising(Qureg qureg, int target, qreal prob);
  *
  * - Parameter @p prob must be a valid probability and ergo satisfy @f$ 0 \le p \le 1 @f$
  *   unless validation is disabled via setQuESTValidationOff(), which permits quasi-probability
- *   channels with even negative probabilities.
+ *   channels with, for example, negative probabilities.
  * - The maximum permitted error probability is @f$ p = 15/16 @f$ (unless validation is disabled),
  *   at which the channel is maximum strength, and the target qubits become maximally mixed.
  * - With validation disabled, the channel remains CPTP for @f$ 15/16 \le p \le 1 @f$.
@@ -357,7 +357,7 @@ void mixTwoQubitDepolarising(Qureg qureg, int target1, int target2, qreal prob);
  * This function effects
  * @f[ 
         \dmrho \; \rightarrow \; 
-        \hat{K}_t^{(1)} \dmrho \, {\hat{K}_t^{(2)}}^\dagger 
+        \hat{K}_t^{(1)} \dmrho \, {\hat{K}_t^{(1)}}^\dagger 
             \,+\,
         \hat{K}_t^{(2)} \dmrho \, {\hat{K}_t^{(2)}}^\dagger
  * @f]
@@ -437,7 +437,7 @@ void mixDamping(Qureg qureg, int target, qreal prob);
  * @f]
  * The operation is a meaningful noise channel (decreases purity) when the probabilities are
  * below that which induces maximal mixing; when the probability of no error is greater than
- * the probability of any error.
+ * (or equal to) the probability of any error.
  * @f[
  *   1 - (p_x + p_y + p_z) \ge \max(p_x, p_y, p_z).
  * @f]
@@ -445,11 +445,12 @@ void mixDamping(Qureg qureg, int target, qreal prob);
  * @constraints
  *
  * - Each of @p probX, @p probY, and @p probZ must be a valid probability, i.e. @f$ 0 \le p_i \le 1 @f$,
- *   and the probability of no error (one minus their sum) must also be valid. This can be relaxed
- *   using setQuESTValidationOff() to effect channels which are not completely-positive and trace-preserving,
- *   such as quasi-probability channels.
+ *   and the probability of no error (one minus their sum) must also be valid. This particular validation
+ *   is insensitive to the validation epsilon as controlled with setQuESTValidationEpsilon(), but can instead
+ *   be relaxed with setQuESTValidationOff(), to effect channels which are not completely-positive and
+ *   trace-preserving, such as quasi-probability channels.
  * - The channel strength must not exceed that which induces maximal mixing (unless validation is disabled),
- *   whereby the probability of any particular error equals that of no error.
+ *   whereby the probability of any particular error equals that of no error, as discussed above.
  * 
  * @equivalences
  * 
@@ -493,7 +494,7 @@ void mixDamping(Qureg qureg, int target, qreal prob);
 void mixPaulis(Qureg qureg, int target, qreal probX, qreal probY, qreal probZ);
 
 
-/** Modifies the density matrix @p qureg to the mixture of itself and density matrix or
+/** Modifies the density matrix @p qureg to the mixture of itself and the density matrix or
  * statevector @p other.
  * 
  * @formulae
@@ -517,6 +518,9 @@ void mixPaulis(Qureg qureg, int target, qreal probX, qreal probY, qreal probZ);
  *
  * @constraints
  *
+ * - Parameter @p prob must be a valid probability, satisfying @f$ 0 \le p \le 1 @f$,
+ *   though can be relaxed to any real scalar by disabling validation with
+ *   setQuESTValidationOff().
  * - @p qureg and @p other must contain the same number of qubits.
  * - If @p other is a density matrix, it must be identically distributed to @p qureg 
  *   (although the parallelisation backends, like multithreading and GPU acceleration, are
@@ -542,7 +546,7 @@ void mixPaulis(Qureg qureg, int target, qreal probX, qreal probY, qreal probZ);
 void mixQureg(Qureg qureg, Qureg other, qreal prob);
 
 
-/** Applies a general, any-size channel described as a Kraus map to the density matrix @p qureg.
+/** Applies a general, any-size channel described as a Kraus map upon the density matrix @p qureg.
  * 
  * @formulae
  * 
@@ -563,9 +567,12 @@ void mixQureg(Qureg qureg, Qureg other, qreal prob);
  *
  * @constraints
  * 
- * - The number of channel targets must agree with the size of the Kraus map.
- * - The channel must be CPTP unless disabled with setQuESTValidationEpsilon(), specifying
- *   @c eps=0, or all validation is (dangerously) disabled with setQuESTValidationOff().
+ * - The number of channel targets @p numTargets must agree with the size of the Kraus map.
+ * - The channel must be approximately CPTP, such that difference between
+ *   @f$ \sum\limits_i {\hat{K}_{\vec{t}}^{(i)}}^\dagger \hat{K}_{\vec{t}}^{(i)} @f$ and 
+ *   @f$ \mathbb{1} @f$ has no element of absolute value greater than the validation
+ *   epsilon @f$ \valeps @f$. This can be adjusted with setQuESTValidationEpsilon(), and
+ *   relaxed entirely by setting @f$ \valeps = 0 @f$.
  * - When @p qureg is distributed, each node must contain at least @c pow(2,2*numTargets)
  *   many amplitudes, to ensure sufficient communication buffers are allocated.
  * 
@@ -590,7 +597,7 @@ void mixQureg(Qureg qureg, Qureg other, qreal prob);
  * - if @p map is not initialised.
  * - if @p map contains a different number of qubits than @p numTargets.
  * - if @p map is not CPTP.
-  * - if @p qureg is distributed and @p numTargets exceeds the number of
+ * - if @p qureg is distributed and @p numTargets exceeds the number of
  *   qubits in @p qureg minus half log-2 of the number of processes.
  * @see
  * - createKrausMap()
@@ -610,7 +617,7 @@ void mixKrausMap(Qureg qureg, int* targets, int numTargets, KrausMap map);
  * @f[
         \dmrho = \sum\limits_i^{2^N} \sum\limits_j^{2^N} \alpha_{ij} \ket{i}\bra{j}.
  * @f] 
- * Internally, this matrix of dimension @f$ 2^N \times 2^N @f$ is stored as the vectorised
+ * Internally, this matrix of dimension @f$ 2^N \times 2^N @f$ is stored in a vectorised
  * form @f$ \ket{\rho} @f$ of dimension @f$ 2^{2N} \times 1 @f$, which concatenates the columns
  * of @f$ \dmrho @f$.
  * @f[  
