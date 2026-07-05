@@ -42,19 +42,220 @@ extern "C" {
  */
 
 
-/// @notyetdoced
+/** Sets the seeds used by QuEST's random number generation.
+ * 
+ * This affects and determines all pseudorandom decisions made the QuEST library,
+ * such as qubit measurement outcomes and random state preparation. The seeds are
+ * passed without modification to QuEST's 19,937-bit
+ * [Mersenne Twister](https://cplusplus.com/reference/random/mt19937_64/) generator.
+ * As such, fully specifying the generator's initial state requires 19,937 seed bits, 
+ * or 623 unsigned integers, although this is rarely necessary.
+ * 
+ * Seeding can be performed at any time before a random decision (such as measurement);
+ * no random outcomes/state is stored on any object beforehand.
+ *
+ * > [!NOTE]
+ * > In distributed simulation, only the root node's seeds are consulted (and broadcast
+ * > to all nodes) while those passed on all other nodes are ignored.
+ * 
+ * @myexample
+ * ```
+    // make report() print only one trailing newline
+    setQuESTNumReportedNewlines(1);
+
+    // seed
+    unsigned seeds[] = {123456789u, 987654321u, 546372819u};
+    setQuESTSeeds(seeds, 2);
+
+    // randomly collapse the plus state
+    initPlusState(qureg);
+    reportScalar("outcome 0", applyQubitMeasurement(qureg, 0));
+    reportScalar("outcome 1", applyQubitMeasurement(qureg, 1));
+    reportScalar("outcome 2", applyQubitMeasurement(qureg, 2));
+
+    // restore RNG to state prior to collapse
+    setQuESTSeeds(seeds, 2);
+
+    // randomly collapse the plus state again, obtaining same outcomes
+    reportStr("");
+    initPlusState(qureg);
+    reportScalar("outcome 0", applyQubitMeasurement(qureg, 0));
+    reportScalar("outcome 1", applyQubitMeasurement(qureg, 1));
+    reportScalar("outcome 2", applyQubitMeasurement(qureg, 2));
+ * ```
+ * Example output:
+ * ```
+    outcome 0: 0
+    outcome 1: 1
+    outcome 2: 1
+
+    outcome 0: 0
+    outcome 1: 1
+    outcome 2: 1
+ * ```
+ * 
+ * @param[in] seeds    a list of seeds.
+ * @param[in] numSeeds the length of @p seeds.
+ * @throws @validationerror
+ * - if @p seeds is a null pointer.
+ * - if @p numSeeds is less than one.
+ * @see
+ * - getQuESTSeeds()
+ * - getQuESTNumSeeds()
+ * - setQuESTSeedsToDefault()
+ * @author Tyson Jones
+ */
 void setQuESTSeeds(unsigned* seeds, int numSeeds);
 
 
-/// @notyetdoced
+/** Re-randomizes QuEST, seeding its random number generator with new seeds as pseudorandomly
+ * produced by the @c C++ [@c std::random_device](https://en.cppreference.com/cpp/numeric/random/random_device)
+ * function, potentially using a hardware RNG.
+ * 
+ * Similar to setQuESTSeeds(), this affects all pseudorandom decisions made the QuEST library,
+ * such as qubit measurement outcomes and random state preparation. Unlike setQuESTSeeds()
+ * however, repeated calls will not guarantee identical random generation; the internally
+ * processed seeds may differ at each invocation. This is, in fact, the function first
+ * internally called during QuEST environment initialisation.
+ * 
+ * Seeding can be performed at any time after QuEST library initialisation, before a
+ * random decision (such as measurement); no random outcomes/state is stored on any object beforehand.
+ * 
+ * This function consults @c std::random_device to produce @c DEFAULT_NUM_RNG_SEEDS=4
+ * seeds, which is infact insufficient to fully specify an initial state of QuEST's
+ * [19,937-bit  Mersenne Twister](https://cplusplus.com/reference/random/mt19937_64/)
+ * generator. Presently, @c DEFAULT_NUM_RNG_SEEDS cannot be changed except through
+ * manual modification and recompilation.
+ *
+ * > [!NOTE]
+ * > In distributed simulation, only the root node's seeds are consulted (and broadcast
+ * > to all nodes) while those passed on all other nodes are ignored.
+ * 
+ * @myexample
+ * ```
+    // make report() print only one trailing newline
+    setQuESTNumReportedNewlines(1);
+
+    // randomise the RNG state
+    setQuESTSeedsToDefault();
+
+    // randomly collapse the plus state
+    initPlusState(qureg);
+    reportScalar("outcome 0", applyQubitMeasurement(qureg, 0));
+    reportScalar("outcome 1", applyQubitMeasurement(qureg, 1));
+    reportScalar("outcome 2", applyQubitMeasurement(qureg, 2));
+
+    // re-randomise the RNG state
+    setQuESTSeedsToDefault();
+
+    // randomly collapse the plus state again, obtaining new outcomes
+    reportStr("");
+    initPlusState(qureg);
+    reportScalar("outcome 0", applyQubitMeasurement(qureg, 0));
+    reportScalar("outcome 1", applyQubitMeasurement(qureg, 1));
+    reportScalar("outcome 2", applyQubitMeasurement(qureg, 2));
+ * ```
+ * Example output:
+ * ```
+    outcome 0: 0
+    outcome 1: 1
+    outcome 2: 0
+
+    outcome 0: 1
+    outcome 1: 1
+    outcome 2: 1
+ * ```
+ * We can view the random seeds chosen by QuEST using getQuESTSeeds():
+ * ```
+    int numSeeds = getQuESTNumSeeds(); // fixed=4
+    unsigned seeds[1000]; // lazily/dangerously assume num<=1000
+    
+    setQuESTSeedsToDefault();
+    getQuESTSeeds(seeds);
+
+    for (int i=0; i<numSeeds; i++)
+        printf("%u ", seeds[i]);
+    printf("\n\n");
+
+    setQuESTSeedsToDefault();
+    getQuESTSeeds(seeds);
+    
+    for (int i=0; i<numSeeds; i++)
+        printf("%u ", seeds[i]);
+    printf("\n");
+ * ```
+ * Example output:
+ * ```
+    766738893 3449946700 2005286535 3261547242 
+
+    3996404805 474611433 1261615115 3403708295 
+ * ```
+ * 
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * @see
+ * - setQuESTSeeds()
+ * - getQuESTSeeds()
+ * - getQuESTNumSeeds()
+ * @author Tyson Jones
+ */
 void setQuESTSeedsToDefault();
 
 
-/// @notyetdoced
+/** Populates @p seeds with those which last seeded QuEST's random number generation.
+ * 
+ * This will return the last seeds passed to setQuESTSeeds(), or those internally
+ * chosen within setQuESTSeedsToDefault() (and equivalently, those initially chosen
+ * during the QuEST environment initialisation). The number of seeds, which informs
+ * the necessary capacity of @p seeds, is obtained by getQuESTNumSeeds().
+ * 
+ * @myexample
+ * 
+ * ```
+    int numSeeds = getQuESTNumSeeds();
+    unsigned *seeds = malloc(numSeeds * sizeof *seeds);
+
+    getQuESTSeeds(seeds);
+    printf("seeds[%d] = { ", numSeeds);
+
+    for (int i=0; i<numSeeds; i++)
+        printf("%u ", seeds[i]);
+    printf("} \n");
+
+    free(seeds);
+ * ```
+ * may output
+ * ```
+    seeds[4] = { 3674477761 2499034318 2614242128 475980445 } 
+ * ```
+ * 
+ * See setQuESTSeedsToDefault() for an example of how getQuESTSeeds() interacts with
+ * other seeding calls.
+ * 
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p seeds is a nullptr.
+ * @throws seg-fault
+ * - if @p seeds does not have capacity to write as many @c unsigned as getQuESTNumSeeds() returns.
+ * @see
+ * - getQuESTNumSeeds()
+ * - setQuESTSeeds()
+ * @author Tyson Jones
+ */
 void getQuESTSeeds(unsigned* seeds);
 
 
-/// @notyetdoced
+/** Returns the number of seeds used by QuEST in its latest round of random number generator seeding.
+ * 
+ * This is the length of the list output by getQuESTSeeds().
+ * 
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * @see
+ * - getQuESTSeeds()
+ * - setQuESTSeeds()
+ * @author Tyson Jones
+ */
 int getQuESTNumSeeds();
 
 
