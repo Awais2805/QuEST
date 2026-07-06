@@ -232,6 +232,7 @@ void setQuESTSeedsToDefault();
  * See setQuESTSeedsToDefault() for an example of how getQuESTSeeds() interacts with
  * other seeding calls.
  * 
+ * @param[out] seeds the list of seeds
  * @throws @validationerror
  * - if the QuEST environment has not been initialised via initQuESTEnv().
  * - if @p seeds is a nullptr.
@@ -249,6 +250,7 @@ void getQuESTSeeds(unsigned* seeds);
  * 
  * This is the length of the list output by getQuESTSeeds().
  * 
+ * @returns the number of seeds.
  * @throws @validationerror
  * - if the QuEST environment has not been initialised via initQuESTEnv().
  * @see
@@ -274,32 +276,203 @@ int getQuESTNumSeeds();
  */
 
 
-/** @notyetdoced
+/** Sets the function which QuEST will call when encountering an invalid input.
+ * 
+ * By default, when a user passes an invalid input to QuEST (such as a negative qubit index),
+ * an internal function @c default_inputErrorHandler() is called which prints a message to
+ * @c stdout, attempts to gracefully clean up communication in distributed settings, then
+ * exits execution with @c exit(EXIT_FAILURE). If this is undesired, setQuESTInputErrorHandler()
+ * allows the user to substitute @p callback for the default handler, which will receive the
+ * throwing API function name @p func, and the error message string @p msg.
+ * 
+ * QuEST endeavours to perform input validation upfront before proceeding to any mutation
+ * of passed objects (like a Qureg). This permits gracefully catching validation errors through
+ * custom handling without corrupting QuEST's state. For example, @c C++ users may wish 
+ * to throw an exception within @p callback, or MPI superusers may wish to perform custom 
+ * communicator cleanup before exiting.
+ * 
+ * > [!IMPORTANT]
+ * > It is crucial that @p callback does not return execution back to the throwing
+ * > QuEST function, which is likely to cause a segmentation fault or other internal
+ * > error. Instead, @p callback should exit or throw an exception, caught by the
+ * > user's control flow.
+ * 
+ * Note validation can be changed or disabled with setQuESTValidationEpsilon() and
+ * setQuESTValidationOff(), which affects when @p callback will be called. This function
+ * can be called at any time to update the error handler.
+ * 
+ * @myexample
+ * 
+ * ```
+    void myErrorHandler(const char* errFunc, const char* errMsg) {
+        printf("Ruh-roh, Raggy! Function '%s' has reported '%s'.\n", errFunc, errMsg);
+        printf("We will now be very good children and exit immediately!\n");
+        exit(0);
+    }
+
+    int main() {
+        initQuESTEnv();
+        setInputErrorHandler(myErrorHandler);
+        createQureg(9999); // invokes myErrorHandler
+        ...
+    }
+ * ```
  *
+ * @param[in] callback a pointer to a function which accepts two `const char*` arguments.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * @throws seg-fault
+ * - if @p callback is a null-ptr and an invalid input is later encountered.
  * @see
- * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/setting_errorhandler.c) and 
- *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/setting_errorhandler.cpp) examples
+ * - [C](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/setting_errorhandler.c) and 
+ *   [C++](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/setting_errorhandler.cpp) examples
+ * - setQuESTValidationOff()
+ * @author Tyson Jones
  */
 void setQuESTInputErrorHandler(void (*callback)(const char* func, const char* msg));
 
 
-/// @notyetdoced
+/** Restores QuEST's input validation.
+ * 
+ * This means that invalid inputs to other QuEST API functions will call the error handler
+ * (the default, or one passed to setQuESTInputErrorHandler()), rather than be silently ignored.
+ * 
+ * This function only has an affect if setQuESTValidationOff() was prior called. This function
+ * does not affect the validation epsilon controlled with setQuESTValidationEpsilon(), which when
+ * zero, will still see the skipping of numerically-approximated validations (such as unitarity checks).
+ * 
+ * @see
+ * - setQuESTValidationOff()
+ * @author Tyson Jones
+ */
 void setQuESTValidationOn();
 
 
-/// @notyetdoced
+/** Disables all of QuEST's input validation.
+ * 
+ * When a QuEST API function encounters an invalid input, the error will be ignored and execution of the
+ * function will proceed. This is useful in order to call a QuEST function in a manner which is ordinarily
+ * forbidden to avoid user mistakes. 
+ * 
+ * > [!IMPORTANT]
+ * > This function disables all of QuEST's runtime input validation, meaning invalid inputs such as
+ * > negative qubit indices will be accepted and trusted, likely causing internal errors and segmentation faults.
+ * 
+ * Users wishing only to adjust numerical validation tolerances, or disable numerical validations such as
+ * matrix unitarity checks, should instead use the safer setQuESTValidationEpsilon(). If it is essential to
+ * disable all validation, it should be later restored with setQuESTValidationOn().
+ * 
+ * @myexample
+ *
+ * ```
+    Qureg qureg = createDensityQureg(3); // ~ 6-qubit statevector
+    CompMatr1 matr = getInlineCompMatr1({{1,2},{3,4}});
+
+    int target = 4; // 0-2 valid, 3-5 hacky, 6+ seg-fault
+
+    setQuESTValidationOff();
+    leftapplyCompMatr1(qureg, target, matr);
+    setQuESTValidationOn();
+ * ```
+ * 
+ * @see
+ * - setQuESTValidationOn()
+ * - setQuESTValidationEpsilon()
+ * - setQuESTInputErrorHandler()
+ * @author Tyson Jones
+ */
 void setQuESTValidationOff();
 
 
-/// @notyetdoced
+/** Restores QuEST's validation threshold for testing numerical or approximate quantities, to its default value.
+ * 
+ * The default value is informed by the environment variable `QUEST_DEFAULT_VALIDATION_EPSILON`. If the
+ * environment variable was not specified during the launch of the QuEST executable, then the default
+ * validation epsilon is specific to the precision of `qreal`, as controlled by `QUEST_FLOAT_PRECISION`.
+ * These are:
+ * | @c QUEST_FLOAT_PRECISION | @c qreal  | default epsilon |
+ * |--------------------------|-----------|-----------------|
+ * | 1                        | @c float  | @c 1E-5         |
+ * | 2                        | @c double | @c 1E-12        |
+ * | 4                        | @c long @c double | @c 1E-15 |
+ *
+ * @see
+ * - setQuESTValidationEpsilon()
+ * @author Tyson Jones
+ */
 void setQuESTValidationEpsilonToDefault();
 
 
-/// @notyetdoced
+/** Modifies QuEST's validation threshold for testing numerical or approximate quantities, to @p eps.
+ * 
+ * Many of QuEST's API functions validate that expected numerical properties of the input are satisfied.
+ * For example, that the matrix passed to applyCompMatr1() is unitary, and ergo that the
+ * product of the matrix with its own adjoint produces the identity matrix. Due to floating-point error,
+ * such properties cannot be evaluated exactly, and small disagreement between the expected and given
+ * property is tolerated. This difference is the validation epsilon, as overridden by this function.
+ * Precisely how the validation epsilon is used by numerical validation is function specific, and
+ * individually documented.
+ * 
+ * > [!TIP]
+ * > Passing @p eps=0 effectively encodes @p eps=infinity, and *disables* all numerical validation.
+ * 
+ * The validation epsilon has no effect on non-numerical validation, such as whether qubit incices
+ * are valid. In general, it is therefore safe to modify and disable numerical validation via this
+ * function.
+ * 
+ * The default validation epsilon, which can itself be controlled by the `QUEST_DEFAULT_VALIDATION_EPSILON`
+ * environment variable, is restored via setQuESTValidationEpsilonToDefault().
+ * 
+ * @myexample
+ * 
+ * ```
+    // | max [matr . adj(matr) - identity] |^2 = 576
+    CompMatr1 matr = getInlineCompMatr1({{1,2},{3,4}}); // non-unitary
+    setQuESTValidationEpsilon(576.0);
+    applyCompMatr1(qureg, 0, matr); // no error
+
+    matr.elems[0][0] = 999;
+    setQuESTValidationEpsilon(0); // disable all numerical validation
+    applyCompMatr1(qureg, 0, matr); // no error
+
+    // target=-1 would still trigger an error
+    // applyCompMatr1(qureg, -1, matr);
+ * ```
+ * 
+ * @param[in] eps the new validation epsilon.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p eps is negative.
+ * @see
+ * - setQuESTValidationEpsilonToDefault()
+ * - getQuESTValidationEpsilon()
+ * - setQuESTValidationOff()
+ * @author Tyson Jones
+ */
 void setQuESTValidationEpsilon(qreal eps);
 
 
-/// @notyetdoced
+/** Returns the threshold used by QuEST's numerical validation.
+ * 
+ * This is the value last passed to setQuESTValidationEpsilon(), unless overridden by
+ * setQuESTValidationEpsilonToDefault(), or similarly if never called. It indicates the
+ * precision and correctness demanded of input numerical quantities to the QuEST API. A larger
+ * epsilon corresponds to more permissive validation, while a smaller epsilon means validation
+ * is harder to pass and input quantities must be more carefully prepared. 
+ * 
+ * > [!NOTE]
+ * > A validation epsilon of @c 0 indicates numerical validation is disabled. 
+ * 
+ * The exact usage of the validation epsilon is function specific. For an example, see applyCompMatr1().
+ * The validation has no effect when validation has been disabled entirely via setQuESTValidationOff().
+ * 
+ * @returns The validation epsilon.
+ * @see
+ * - setQuESTValidationEpsilon()
+ * - setQuESTValidationEpsilonToDefault()
+ * - setQuESTValidationOff()
+ * @author Tyson Jones
+ */
 qreal getQuESTValidationEpsilon();
 
 
