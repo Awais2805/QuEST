@@ -793,11 +793,42 @@ void setQuESTReportedPauliStrStyle(int style);
  */
 
 
-/// @notyetdoced
+/** Returns the current size (in bytes) of the persistent GPU cache used to accelerate
+ * QuEST.
+ * 
+ * Some QuEST functions involve allocating non-trivial device data, which persists between
+ * invocations for effiency. For example, applyCompMatr() when given a matrix of more than
+ * five qubits, will allocate data proportional in size to the matrix dimension and the
+ * simulated Qureg size. This allocation happens on-the-fly.
+ * 
+ * This function returns the size of that cache. It does not include device memory consumed
+ * by persistent QuEST objects, such as Qureg and CompMatr.
+ * When QuEST is not running in GPU-accelerated mode, this function always returns @c 0.
+ * 
+ * @returns The current GPU cache size in bytes.
+ * @see
+ * - clearQuESTGpuCache()
+ * @author Tyson Jones
+ */
 qindex getQuESTGpuCacheSize();
 
 
-/// @notyetdoced
+/** Clears QuEST's GPU cache.
+ * 
+ * Some QuEST functions involve allocating non-trivial device data, which persists between
+ * invocations for effiency. For example, applyCompMatr() when given a matrix of more than
+ * five qubits, will allocate data proportional in size to the matrix dimension and the
+ * simulated Qureg size. This allocation happens on-the-fly.
+ * 
+ * This function clears this cache, freeing memory at the cost of increased runtime when
+ * calling functions like applyCompMatr(), due to the overhead of reallocation therein.
+ * This function has no effect on the persistent device memory owned by QuEST objects like
+ * Qureg and CompMatr, nor does it have any effect when QuEST is not using GPU acceleration.
+ * 
+ * @see
+ * - getQuESTGpuCacheSize()
+ * @author Tyson Jones
+ */
 void clearQuESTGpuCache();
 
 
