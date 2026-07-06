@@ -487,51 +487,297 @@ qreal getQuESTValidationEpsilon();
  */
 
 
-/// @notyetdoced
-/// @notyettested
+/** Sets the maximum number of rows and columns of data structures subsequently printed by
+ * QuEST's report functions, with remaining elements ellipted.
+ * 
+ * This function is useful for keeping @c stdout concise and readable when reporting
+ * large data structures, such as matrices and Qureg. The ellipted elements are in
+ * the _center_ of the reported data structure. The specified maximums persist until
+ * changed again with this function.
+ * 
+ * > [!TIP]
+ * > Specifying @p numRows=0 or @p numCols=0 respectively disables ellipsis across
+ * > rows and columns respectively. Beware this means that functions like reportQureg()
+ * > will display the entirety of their data, which can be very large.
+ * 
+ * This function presently affects the output of functions:
+ * - reportQureg()
+ * - reportPauliStrSum()
+ * - reportCompMatr1()
+ * - reportCompMatr2()
+ * - reportCompMatr()
+ * - reportDiagMatr1()
+ * - reportDiagMatr2()
+ * - reportDiagMatr()
+ * - reportFullStateDiagMatr()
+ * - reportKrausMap()
+ * - reportSuperOp()
+ * 
+ * In contrast, it has no effect on the output of functions:
+ * - reportPauliStr()
+ * - reportScalar()
+ * - reportStr()
+ * 
+ * > When this function is not called, the QuEST defaults are adopted, which are presently:
+ * > - @c numRows=32
+ * > - @c numCols=4
+ * 
+ * @myexample
+ * 
+ * ```cpp
+    Qureg qureg = createDensityQureg(6);
+    initRandomPureState(qureg);
+    setQuESTMaxNumReportedItems(7,4);
+    reportQureg(qureg);
+ * ```
+ * will report 7 rows and 4 columns of @c qureg.
+ * ```text
+    Qureg (6 qubit density matrix, 64x64 qcomps, 64.1 KiB):
+        0.012273+(3.2329e-19)i  -0.0056906+0.0072884i   …  -0.0052104-0.0070839i    0.00092891-0.0086299i    
+        -0.0056906-0.0072884i   0.0069669-(1.363e-20)i  …  -0.0017909+0.0063788i    -0.0055556+0.0034498i    
+        0.014757-0.0083751i     -0.0018689+0.012647i    …  -0.011099-0.0049622i     -0.0047721-0.011011i     
+        0.00078401+0.0014319i   -0.0012139-0.00019834i  …  0.00049365-0.0010604i    0.0010662-0.00044291i    
+                  ⋮
+        -0.010456+0.012047i     -0.0023056-0.011795i    …  0.011393+0.00092115i     0.0076794+0.0082644i     
+        -0.0052104+0.0070839i   -0.0017909-0.0063788i   …  0.0063009-(3.3799e-20)i  0.0045868+0.0041999i     
+        0.00092891+0.0086299i   -0.0055556-0.0034498i   …  0.0045868-0.0041999i     0.0061386-(1.4941e-19)i  
+ * ```
+ *
+ * @param[in] numRows the max number of rows to report (all if @c =0).
+ * @param[in] numCols the max number of columns to report (all if @c =0).
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if either @p numRows or @p numCols is negative.
+ * @see
+ * - [C](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/reporting_matrices.c) and 
+ *   [C++](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/reporting_matrices.cpp) examples
+ * - setQuESTMaxNumReportedSigFigs()
+ * - setQuESTNumReportedNewlines()
+ */
 void setQuESTMaxNumReportedItems(qindex numRows, qindex numCols);
 
 
-/** @notyetdoced
+/** Sets the maximum number of significant figures in floating-point numbers printed by
+ * QuEST's reporter functions.
+ * 
+ * This function is useful for keeping @c stdout concise and readable when reporting
+ * numerical quantites, such as matrices and Qureg amplitudes. The specified number of
+ * significant figures persists until changed again with this function.
+ * 
+ * > [!TIP]
+ * > Numbers with _fewer_ non-zero significant figures will _not_ be padded with zeros,
+ * > and so will print fewer digits than @p numSigFigs, keeping the output concise.
+ * 
+ * > [!NOTE]
+ * > Complex quantities will have their real and imaginary components separately printed,
+ * > each with the specified number of significant figures.
+ * 
+ * > [!IMPORTANT]
  * > This function does not affect the significant figures in printed memory sizes
  * > (e.g. `5.32 KiB`) which is always shown with three significant figures 
  * > (or four when in bytes, e.g. `1023 bytes`).
+ * 
+ * @myexample
+ * 
+ * ```cpp
+    Qureg qureg = createQureg(3);
+    initRandomPureState(qureg);
+
+    setQuESTMaxNumReportedSigFigs(2);
+    reportQureg(qureg);
+
+    setQuESTMaxNumReportedSigFigs(10);
+    reportQureg(qureg);
+ * ```
+ * may output
+ * ```text
+    Qureg (3 qubit statevector, 8 qcomps, 232 bytes):
+        0.49+0.35i    |0⟩
+        -0.085+0.17i  |1⟩
+        0.37+0.099i   |2⟩
+        -0.14+0.088i  |3⟩
+        -0.29+0.078i  |4⟩
+        0.19+0.019i   |5⟩
+        0.02-0.5i     |6⟩
+        -0.032+0.22i  |7⟩
+
+    Qureg (3 qubit statevector, 8 qcomps, 232 bytes):
+        0.4915502074+0.3471270204i    |0⟩
+        -0.08473589829+0.1685819182i  |1⟩
+        0.3702183582+0.0991921232i    |2⟩
+        -0.142193399+0.08829704821i   |3⟩
+        -0.2881909331+0.07795511511i  |4⟩
+        0.1868915394+0.01946703883i   |5⟩
+        0.01956017542-0.5029788111i   |6⟩
+        -0.03171267079+0.220342331i   |7⟩
+ * ```
+ * Meanwhile,
+ * ```cpp
+    CompMatr1 matr = getInlineCompMatr1({{1,2},{3,4.123456789}});
+    setQuESTMaxNumReportedSigFigs(3);
+    reportCompMatr1(matr);
+ * ```
+ * will output
+ * ```text
+    CompMatr1 (1 qubit, 2x2 qcomps, 80 bytes):
+        1  2     
+        3  4.12
+ * ```
+ *
+ * @param[in] numSigFigs the max number of significant figures to print in subsequent report functions.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p numSigFigs is negative.
+ * @see
+ * - setQuESTMaxNumReportedItems()
+ * - setQuESTNumReportedNewlines()
+ * @author Tyson Jones
  */
 void setQuESTMaxNumReportedSigFigs(int numSigFigs);
 
 
-/// @notyetdoced
+/** Sets the number of trailing newlines printed at the end of QuEST's report functions.
+ * 
+ * These newlines are merely a convenience so that users do not have to manually intersperse
+ * newlines in @c stdout between functions like reportScalar() and reportPauliStr(),
+ * which becomes a greater pain in distributed settings when avoiding duplicated output
+ * across processes. The specified number of newlines persists until changed again with
+ * this function.
+ * 
+ * @myexample
+ * 
+ * By default, the sequence
+ * ```cpp
+    reportCompMatr1(getInlineCompMatr1({{1,2},{3,4}}));
+    reportPauliStr(getInlinePauliStr("XYZ", {0,2,4}));
+    reportScalar("x", 5);
+    reportStr("hello world!");
+ * ```
+ * will print with the internal default of @p numNewLines=2
+ * ```text
+    CompMatr1 (1 qubit, 2x2 qcomps, 80 bytes):
+        1  2  
+        3  4  
+
+    ZIYIX
+
+    x: 5
+
+    hello world!
+ * ```
+ * but if called after @c setQuESTNumReportedNewlines(1), will output
+ * ```text
+    CompMatr1 (1 qubit, 2x2 qcomps, 80 bytes):
+        1  2  
+        3  4  
+    ZIYIX
+    x: 5
+    hello world!
+ * ```
+ * It is possible to forego all trailing newlines, and also to write to @c stdout between
+ * report functions.
+ * ```cpp
+    setQuESTNumReportedNewlines(0);
+    reportPauliStr(getInlinePauliStr("XYZ", {0,2,4}));
+    printf(" * ");
+    reportPauliStr(getInlinePauliStr("ZZZ", {0,1,2}));
+    printf(" = ");
+    reportPauliStr(getInlinePauliStr("YZXZ", {0,1,2,4}));
+    printf("\n");
+ * ```
+ * ```text
+    ZIYIX * ZZZ = ZIXZY
+ * ```
+ *
+ * @param[in] numNewlines the new number of trailing newlines.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p numNewlines is negative.
+ * @author Tyson Jones
+ */
 void setQuESTNumReportedNewlines(int numNewlines);
 
 
-/** 
- * @notyetdoced
- * @notyettested
+/** Sets the characters used by reportPauliStr() and reportPauliStrSum() to indicate the
+ * @c I, @c X, @c Y and @c Z Pauli operators.
+ * 
  * @myexample
- * ```
-   PauliStr str = getInlinePauliStr("XYZ", {0,10,20});
+ * ```cpp
+   PauliStr str = getInlinePauliStr("XYZZ", {0,10,13,20});
    reportPauliStr(str);
 
    setQuESTReportedPauliChars(".xyz");
    reportPauliStr(str);
+
+   setQuESTReportedPauliChars(" !!!");
+   reportPauliStr(str);
  * ```
+ * ```text
+    ZIIIIIIZIIYIIIIIIIIIX
+
+    z......z..y.........x
+
+    !      !  !         !
+ * ```
+ * These symbols are used across all styles accepted by setQuESTReportedPauliStrStyle().
+ * ```cpp
+   setQuESTReportedPauliStrStyle(1); // style=1
+   setQuESTReportedPauliChars(".XyS");
+   reportPauliStr(str);
+ * ```
+ * ```text
+   X0 y10 S13 S20 
+ * ```
+ *
+ * @param[in] paulis four characters to indicate @c I, @c X, @c Y and @c Z respectively.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p paulis is not length @c 4.
+ * @throws seg-fault
+ * - if @p paulis is a null pointer.
+ * - if @p paulis does not contain a terminal character and is smaller than 4 bytes in size.
+ * @see
+ * - setQuESTReportedPauliStrStyle()
+ * @author Tyson Jones
  */
 void setQuESTReportedPauliChars(const char* paulis);
 
 
-/** 
- * @notyetdoced
- * @notyettested
- * @myexample
- * ```
-   PauliStr str = getInlinePauliStr("XYZ", {0,10,20});
-
-   setQuESTReportedPauliStrStyle(0);
-   reportPauliStr(str);
-
-   setQuESTReportedPauliStrStyle(1);
-   reportPauliStr(str);
- * ```
+/** Sets the visual style of Pauli strings printed by reportPauliStr() and reportPauliStrSum().
+ * 
+ * - When @p style=0 (default), every Pauli operator in the string is printed, _until_ the
+ *   largest-index non-identity operator. The rightmost printed operator is the least
+ *   significant (i.e. of qubit index @c 0).
+ * 
+ *   For example:
+ *   ```cpp
+     setQuESTReportedPauliStrStyle(0); // default
+     reportPauliStr(getInlinePauliStr("XYZZ", {0,10,13,20}));
+ *   ```
+ *   ```text
+     ZIIIIIIZIIYIIIIIIIIIX
+ *   ```
+ * 
+ * - When @p style=1, only non-identity Pauli operators are printed, followed by their indices.
+ *   
+ *   For example:
+ *   ```cpp
+     setQuESTReportedPauliStrStyle(1);
+     reportPauliStr(getInlinePauliStr("XYZZ", {0,10,13,20}));
+ *   ```
+ *   ```text
+     X0 Y10 Z13 Z20
+ *   ```
+ *
+ * The symbols for @c I, @c X, @c Y and @c Z can be overridden with setQuESTReportedPauliChars().
+ * 
+ * @param[in] style either @c 0 or @c 1 to respectively indicate the above styles.
+ * @throws @validationerror
+ * - if the QuEST environment has not been initialised via initQuESTEnv().
+ * - if @p style is not @c 0 or @c 1.
+ * @see
+ * - setQuESTReportedPauliChars()
+ * @author Tyson Jones
  */
 void setQuESTReportedPauliStrStyle(int style);
 
