@@ -1996,11 +1996,11 @@ void applyRotateAroundAxis(Qureg qureg, int target, qreal angle, qreal axisX, qr
  * 
  * @author Tyson Jones
  */
-void applyControlledRotateAroundAxis(Qureg qureg, int ctrl, int targ, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
+void applyControlledRotateAroundAxis(Qureg qureg, int control, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
 /// @notyetdoced
-void applyMultiControlledRotateAroundAxis(Qureg qureg, int* ctrls, int numCtrls, int targ, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
+void applyMultiControlledRotateAroundAxis(Qureg qureg, int* controls, int numControls, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
 /** @notyetdoced
@@ -2014,7 +2014,7 @@ void applyMultiControlledRotateAroundAxis(Qureg qureg, int* ctrls, int numCtrls,
  * 
  * @author Tyson Jones
  */
-void applyMultiStateControlledRotateAroundAxis(Qureg qureg, int* ctrls, int* states, int numCtrls, int targ, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
+void applyMultiStateControlledRotateAroundAxis(Qureg qureg, int* controls, int* states, int numControls, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
 // end de-mangler
@@ -2078,7 +2078,7 @@ void applyMultiStateControlledRotateZ(Qureg qureg, std::vector<int> controls, st
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiControlledRotateAroundAxis()
-void applyMultiControlledRotateAroundAxis(Qureg qureg, std::vector<int> ctrls, int targ, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
+void applyMultiControlledRotateAroundAxis(Qureg qureg, std::vector<int> controls, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
 /// @notyettested
@@ -2086,7 +2086,7 @@ void applyMultiControlledRotateAroundAxis(Qureg qureg, std::vector<int> ctrls, i
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiStateControlledRotateAroundAxis()
-void applyMultiStateControlledRotateAroundAxis(Qureg qureg, std::vector<int> ctrls, std::vector<int> states, int targ, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
+void applyMultiStateControlledRotateAroundAxis(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
 #endif // __cplusplus
