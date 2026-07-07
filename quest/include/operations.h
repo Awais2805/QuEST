@@ -625,6 +625,9 @@ extern "C" {
       \hat{M}_{\text{targets}} \equiv A_{\text{targets}[0]} \cdot B_{\text{targets}[1]} \cdot C_{\text{targets}[2]} \cdot \dots
  * @f]
  *
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order.
+ *
  * @see
  * - applyCompMatr1()
  * - leftapplyCompMatr()
@@ -885,6 +888,9 @@ extern "C" {
  * > To efficiently apply a diagonal matrix upon _all_ targets of @p qureg, 
  * > use applyFullStateDiagMatr().
  * 
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order.
+ * 
  * @see
  * - applyDiagMatrPower()
  * - applyControlledDiagMatr()
@@ -926,6 +932,9 @@ void applyMultiStateControlledDiagMatr(Qureg qureg, int* controls, int* states, 
  * > [!TIP]
  * > To efficiently apply an exponentiated diagonal matrix upon _all_ targets of @p qureg, 
  * > use applyFullStateDiagMatrPower().
+ * 
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order.
  *
  * @formulae
  * 
@@ -2102,6 +2111,10 @@ extern "C" {
       R_{\hat{Z}}(\theta) = \exp \left( - \iu \, \frac{\theta}{2} \, \bigotimes_{t \,\in\, \vec{t}} \hat{Z}_t \right).
  * @f]
  *
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order,
+ * > though the effect of this function is incidentally unaffected by the ordering of @p targets.
+ *
  * @equivalences
  * 
  * - This function is equivalent to calling applyPauliGadget() with a PauliStr containing only @f$ \hat{Z} @f$ and @f$ \id @f$.
@@ -2293,6 +2306,10 @@ void applyTwoQubitPhaseShift(Qureg qureg, int target1, int target2, qreal angle)
  * @f]
  * effected upon the target qubits.
  * 
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order,
+ * > though the effect of this function is incidentally unaffected by the ordering of @p targets.
+ * 
  * @equivalences
  * 
  * - The ordering of @p targets has no affect on the effected operation.
@@ -2323,6 +2340,10 @@ void applyMultiQubitPhaseFlip(Qureg qureg, int* targets, int numTargets);
       \hat{U}(\theta) = \begin{pmatrix} 1 \\  & \ddots \\ & & 1 \\ & & & e^{\iu \theta} \end{pmatrix},
  * @f]
  * effected upon the target qubits.
+ * 
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order,
+ * > though the effect of this function is incidentally unaffected by the ordering of @p targets.
  * 
  * @diagram
  * @dot
@@ -2437,6 +2458,10 @@ extern "C" {
  *
  * Applies a many-qubit NOT gate (or tensor product of Pauli @c X operators) upon the @p targets of @p qureg.
  *
+ * > [!TIP]
+ * > This function is sometimes more efficient when @p targets are specified in increasing order,
+ * > though the effect of this function is incidentally unaffected by the ordering of @p targets.
+ * 
  * @author Tyson Jones
  */
 void applyMultiQubitNot(Qureg qureg, int* targets, int numTargets);
