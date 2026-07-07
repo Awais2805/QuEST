@@ -98,6 +98,7 @@ digraph {
  *   where the validation epsilon @f$ \valeps @f$ can be adjusted with setQuESTValidationEpsilon().
  * 
  * @myexample
+ * 
  * ```
     Qureg qureg = createQureg(5);
 
@@ -199,18 +200,20 @@ digraph {
  * @equivalences
  * 
  * - This function is faster than, but mathematically equivalent to, initialising a two-qubit
- *   matrix (CompMatr2) to the @f$C_1[\hat{U}_0]@f$ matrix above, and calling applyCompMatr2():
- *   ```
+ *   matrix (CompMatr2) to the @f$C_1[\hat{U}_0]@f$ matrix above, and calling applyCompMatr2(),
+ *   passing @p control as the most significant target.
+ * ```
      CompMatr2 m = getInlineCompMatr2({
          {1,0,0,0}, 
          {0,1,0,0}, 
          {0,0,u00,u01}, 
          {0,0,u10,u11}});
      
-     applyCompMatr2(qureg, target, control);
- *   ```
+     applyCompMatr2(qureg, target, control, m);
+ * ```
  *
  * @myexample
+ * 
  * ```
     Qureg qureg = createQureg(5);
 
@@ -459,7 +462,7 @@ digraph {
  * @see 
  * - applyCompMatr2()
  */
-void applyControlledCompMatr2(Qureg qureg, int control, int target1, int target2, CompMatr2 matr);
+void applyControlledCompMatr2(Qureg qureg, int control, int target1, int target2, CompMatr2 matrix);
 
 
 /** @notyetdoced
@@ -503,7 +506,7 @@ digraph {
  * @see
  * - applyCompMatr2()
  */
-void applyMultiControlledCompMatr2(Qureg qureg, int* controls, int numControls, int target1, int target2, CompMatr2 matr);
+void applyMultiControlledCompMatr2(Qureg qureg, int* controls, int numControls, int target1, int target2, CompMatr2 matrix);
 
 
 /** @notyetdoced
@@ -549,7 +552,7 @@ digraph {
  * - applyCompMatr2()
  * - applyMultiStateControlledCompMatr1()
  */
-void applyMultiStateControlledCompMatr2(Qureg qureg, int* controls, int* states, int numControls, int target1, int target2, CompMatr2 matr);
+void applyMultiStateControlledCompMatr2(Qureg qureg, int* controls, int* states, int numControls, int target1, int target2, CompMatr2 matrix);
 
 
 // end de-mangler
@@ -565,7 +568,7 @@ void applyMultiStateControlledCompMatr2(Qureg qureg, int* controls, int* states,
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiControlledCompMatr2()
-void applyMultiControlledCompMatr2(Qureg qureg, std::vector<int> controls, int target1, int target2, CompMatr2 matr);
+void applyMultiControlledCompMatr2(Qureg qureg, std::vector<int> controls, int target1, int target2, CompMatr2 matrix);
 
 
 /// @notyettested
@@ -573,7 +576,7 @@ void applyMultiControlledCompMatr2(Qureg qureg, std::vector<int> controls, int t
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiStateControlledCompMatr2()
-void applyMultiStateControlledCompMatr2(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target1, int target2, CompMatr2 matr);
+void applyMultiStateControlledCompMatr2(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target1, int target2, CompMatr2 matrix);
 
 
 #endif // __cplusplus
@@ -614,7 +617,7 @@ extern "C" {
  * - leftapplyCompMatr()
  * - rightapplyCompMatr()
  */
-void applyCompMatr(Qureg qureg, int* targets, int numTargets, CompMatr matr);
+void applyCompMatr(Qureg qureg, int* targets, int numTargets, CompMatr matrix);
 
 
 /// @notyetdoced
@@ -626,13 +629,13 @@ void applyControlledCompMatr(Qureg qureg, int control, int* targets, int numTarg
 /// @notyetdoced
 /// @see
 /// - applyMultiControlledCompMatr1()
-void applyMultiControlledCompMatr(Qureg qureg, int* controls, int numControls, int* targets, int numTargets, CompMatr matr);
+void applyMultiControlledCompMatr(Qureg qureg, int* controls, int numControls, int* targets, int numTargets, CompMatr matrix);
 
 
 /// @notyetdoced
 /// @see
 /// - applyMultiStateControlledCompMatr1()
-void applyMultiStateControlledCompMatr(Qureg qureg, int* controls, int* states, int numControls, int* targets, int numTargets, CompMatr matr);
+void applyMultiStateControlledCompMatr(Qureg qureg, int* controls, int* states, int numControls, int* targets, int numTargets, CompMatr matrix);
 
 
 // end de-mangler
@@ -648,7 +651,7 @@ void applyMultiStateControlledCompMatr(Qureg qureg, int* controls, int* states, 
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyCompMatr()
-void applyCompMatr(Qureg qureg, std::vector<int> targets, CompMatr matr);
+void applyCompMatr(Qureg qureg, std::vector<int> targets, CompMatr matrix);
 
 
 /// @notyettested
@@ -656,7 +659,7 @@ void applyCompMatr(Qureg qureg, std::vector<int> targets, CompMatr matr);
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyControlledCompMatr()
-void applyControlledCompMatr(Qureg qureg, int control, std::vector<int> targets, CompMatr matr);
+void applyControlledCompMatr(Qureg qureg, int control, std::vector<int> targets, CompMatr matrix);
 
 
 /// @notyettested
@@ -664,7 +667,7 @@ void applyControlledCompMatr(Qureg qureg, int control, std::vector<int> targets,
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiControlledCompMatr()
-void applyMultiControlledCompMatr(Qureg qureg, std::vector<int> controls, std::vector<int> targets, CompMatr matr);
+void applyMultiControlledCompMatr(Qureg qureg, std::vector<int> controls, std::vector<int> targets, CompMatr matrix);
 
 
 /// @notyettested
@@ -672,7 +675,7 @@ void applyMultiControlledCompMatr(Qureg qureg, std::vector<int> controls, std::v
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiStateControlledCompMatr()
-void applyMultiStateControlledCompMatr(Qureg qureg, std::vector<int> controls, std::vector<int> states, std::vector<int> targets, CompMatr matr);
+void applyMultiStateControlledCompMatr(Qureg qureg, std::vector<int> controls, std::vector<int> states, std::vector<int> targets, CompMatr matrix);
 
 
 #endif // __cplusplus
@@ -699,22 +702,22 @@ extern "C" {
  * - leftapplyCompMatr2()
  * - rightapplyCompMatr2()
  */
-void applyDiagMatr1(Qureg qureg, int target, DiagMatr1 matr);
+void applyDiagMatr1(Qureg qureg, int target, DiagMatr1 matrix);
 
 
 /// @notyetdoced
 /// @see applyControlledCompMatr1()
-void applyControlledDiagMatr1(Qureg qureg, int control, int target, DiagMatr1 matr);
+void applyControlledDiagMatr1(Qureg qureg, int control, int target, DiagMatr1 matrix);
 
 
 /// @notyetdoced
 /// @see applyMultiControlledCompMatr1()
-void applyMultiControlledDiagMatr1(Qureg qureg, int* controls, int numControls, int target, DiagMatr1 matr);
+void applyMultiControlledDiagMatr1(Qureg qureg, int* controls, int numControls, int target, DiagMatr1 matrix);
 
 
 /// @notyetdoced
 /// @see applyMultiStateControlledCompMatr1()
-void applyMultiStateControlledDiagMatr1(Qureg qureg, int* controls, int* states, int numControls, int target, DiagMatr1 matr);
+void applyMultiStateControlledDiagMatr1(Qureg qureg, int* controls, int* states, int numControls, int target, DiagMatr1 matrix);
 
 
 // end de-mangler
@@ -730,7 +733,7 @@ void applyMultiStateControlledDiagMatr1(Qureg qureg, int* controls, int* states,
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiControlledDiagMatr1()
-void applyMultiControlledDiagMatr1(Qureg qureg, std::vector<int> controls, int target, DiagMatr1 matr);
+void applyMultiControlledDiagMatr1(Qureg qureg, std::vector<int> controls, int target, DiagMatr1 matrix);
 
 
 /// @notyettested
@@ -738,7 +741,7 @@ void applyMultiControlledDiagMatr1(Qureg qureg, std::vector<int> controls, int t
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiStateControlledDiagMatr1()
-void applyMultiStateControlledDiagMatr1(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target, DiagMatr1 matr);
+void applyMultiStateControlledDiagMatr1(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target, DiagMatr1 matrix);
 
 
 #endif // __cplusplus
@@ -761,22 +764,22 @@ extern "C" {
 
 /// @notyetdoced
 /// @see applyCompMatr1()
-void applyDiagMatr2(Qureg qureg, int target1, int target2, DiagMatr2 matr);
+void applyDiagMatr2(Qureg qureg, int target1, int target2, DiagMatr2 matrix);
 
 
 /// @notyetdoced
 /// @see applyControlledCompMatr1()
-void applyControlledDiagMatr2(Qureg qureg, int control, int target1, int target2, DiagMatr2 matr);
+void applyControlledDiagMatr2(Qureg qureg, int control, int target1, int target2, DiagMatr2 matrix);
 
 
 /// @notyetdoced
 /// @see applyMultiControlledCompMatr1()
-void applyMultiControlledDiagMatr2(Qureg qureg, int* controls, int numControls, int target1, int target2, DiagMatr2 matr);
+void applyMultiControlledDiagMatr2(Qureg qureg, int* controls, int numControls, int target1, int target2, DiagMatr2 matrix);
 
 
 /// @notyetdoced
 /// @see applyMultiStateControlledCompMatr1()
-void applyMultiStateControlledDiagMatr2(Qureg qureg, int* controls, int* states, int numControls, int target1, int target2, DiagMatr2 matr);
+void applyMultiStateControlledDiagMatr2(Qureg qureg, int* controls, int* states, int numControls, int target1, int target2, DiagMatr2 matrix);
 
 
 // end de-mangler
@@ -792,7 +795,7 @@ void applyMultiStateControlledDiagMatr2(Qureg qureg, int* controls, int* states,
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiControlledDiagMatr2()
-void applyMultiControlledDiagMatr2(Qureg qureg, std::vector<int> controls, int target1, int target2, DiagMatr2 matr);
+void applyMultiControlledDiagMatr2(Qureg qureg, std::vector<int> controls, int target1, int target2, DiagMatr2 matrix);
 
 
 /// @notyettested
@@ -800,7 +803,7 @@ void applyMultiControlledDiagMatr2(Qureg qureg, std::vector<int> controls, int t
 /// @notyetdoced
 /// @cppvectoroverload
 /// @see applyMultiStateControlledDiagMatr2()
-void applyMultiStateControlledDiagMatr2(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target1, int target2, DiagMatr2 matr);
+void applyMultiStateControlledDiagMatr2(Qureg qureg, std::vector<int> controls, std::vector<int> states, int target1, int target2, DiagMatr2 matrix);
 
 
 #endif // __cplusplus
