@@ -477,6 +477,9 @@ void applyControlledCompMatr2(Qureg qureg, int control, int target1, int target2
  * Applies a multiply-controlled two-qubit dense unitary @p matrix to qubits 
  * @p target1 and @p target2 (treated as increasing significance) of @p qureg.
  * 
+ * > - See applyCompMatr2() for information about @p target1, @p target2 and @p matrix.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
  * @diagram
  * @dot
 digraph {
@@ -522,7 +525,7 @@ void applyMultiControlledCompMatr2(Qureg qureg, int* controls, int numControls, 
  * @p target1 and @p target2 of @p qureg,
  * conditioned upon the @p controls being in the corresponding @p states.
  * 
- * > - See applyCompMatr2() for information about @p target1 and @p target2.
+ * > - See applyCompMatr2() for information about @p target1, @p target2 and @p matrix.
  * > - See applyMultiStateControlledCompMatr1() for information about @p controls and @p states.
  * 
  * @diagram
@@ -654,8 +657,7 @@ void applyControlledCompMatr(Qureg qureg, int control, int* targets, int numTarg
 /** @notyetdoced
  * 
  * Applies a multiply-controlled arbitrarily-sized dense unitary @p matrix upon the
- * @p targets (treated as increasing significance) of @p qureg, 
- * conditioned upon all @p controls being in state @c 1.
+ * @p targets of @p qureg.
  * 
  * > - See applyCompMatr() for information about @p targets and @p matrix.
  * > - See applyMultiControlledCompMatr1() for information about @p controls.
@@ -760,8 +762,16 @@ void applyDiagMatr1(Qureg qureg, int target, DiagMatr1 matrix);
 void applyControlledDiagMatr1(Qureg qureg, int control, int target, DiagMatr1 matrix);
 
 
-/// @notyetdoced
-/// @see applyMultiControlledCompMatr1()
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled one-qubit diagonal unitary @p matrix upon the
+ * @p target qubit of @p qureg.
+ * 
+ * > - See applyDiagMatr1() for information about @p target and @p matrix.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls and @p states.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledDiagMatr1(Qureg qureg, int* controls, int numControls, int target, DiagMatr1 matrix);
 
 
@@ -844,8 +854,16 @@ void applyDiagMatr2(Qureg qureg, int target1, int target2, DiagMatr2 matrix);
 void applyControlledDiagMatr2(Qureg qureg, int control, int target1, int target2, DiagMatr2 matrix);
 
 
-/// @notyetdoced
-/// @see applyMultiControlledCompMatr1()
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled two-qubit diagonal unitary @p matrix upon
+ * qubits @p target1 and @p target2 of @p qureg.
+ * 
+ * > - See applyDiagMatr2() for information about @p target1, @p target2 and @p matrix.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledDiagMatr2(Qureg qureg, int* controls, int numControls, int target1, int target2, DiagMatr2 matrix);
 
 
@@ -938,8 +956,16 @@ void applyDiagMatr(Qureg qureg, int* targets, int numTargets, DiagMatr matrix);
 void applyControlledDiagMatr(Qureg qureg, int control, int* targets, int numTargets, DiagMatr matrix);
 
 
-/// @notyetdoced
-/// @see applyMultiControlledCompMatr1()
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled arbitrarily-sized diagonal unitary @p matrix upon
+ * the @p targets of @p qureg.
+ * 
+ * > - See applyDiagMatr() for information about @p targets and @p matrix.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledDiagMatr(Qureg qureg, int* controls, int numControls, int* targets, int numTargets, DiagMatr matrix);
 
 
@@ -994,10 +1020,18 @@ void applyDiagMatrPower(Qureg qureg, int* targets, int numTargets, DiagMatr matr
 void applyControlledDiagMatrPower(Qureg qureg, int control, int* targets, int numTargets, DiagMatr matrix, qcomp exponent);
 
 
-/// @notyetdoced
-/// @see
-/// - applyDiagMatrPower()
-/// - applyMultiControlledCompMatr1()
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled arbitrarily-sized diagonal unitary @p matrix,
+ * raised to the power @p exponent, 
+ * upon the @p targets of @p qureg.
+ * 
+ * > - See applyDiagMatr() for information about @p targets and @p matrix.
+ * > - See applyDiagMatrPower() for information about @p exponent.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledDiagMatrPower(Qureg qureg, int* controls, int numControls, int* targets, int numTargets, DiagMatr matrix, qcomp exponent);
 
 
@@ -1157,7 +1191,15 @@ void applyS(Qureg qureg, int target);
 void applyControlledS(Qureg qureg, int control, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled S gate on the @p target qubit of @p qureg.
+ * 
+ * > - See applyS() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledS(Qureg qureg, int* controls, int numControls, int target);
 
 
@@ -1190,7 +1232,16 @@ void applyT(Qureg qureg, int target);
 void applyControlledT(Qureg qureg, int control, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies an arbitrarily-controlled T gate on the @p target qubit of @p qureg,
+ * conditioned upon @p controls being in the corresponding @p states.
+ * 
+ * > - See applyT() for information about the base operation.
+ * > - See applyMultiStateControlledCompMatr1() for information about @p controls and @p states.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledT(Qureg qureg, int* controls, int numControls, int target);
 
 
@@ -1223,7 +1274,16 @@ void applyHadamard(Qureg qureg, int target);
 void applyControlledHadamard(Qureg qureg, int control, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies an arbitrarily-controlled Hadamard gate on the @p target qubit of @p qureg,
+ * conditioned upon @p controls being in the corresponding @p states.
+ * 
+ * > - See applyHadamard() for information about the base operation.
+ * > - See applyMultiStateControlledCompMatr1() for information about @p controls and @p states.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledHadamard(Qureg qureg, int* controls, int numControls, int target);
 
 
@@ -1358,7 +1418,15 @@ void applySwap(Qureg qureg, int qubit1, int qubit2);
 void applyControlledSwap(Qureg qureg, int control, int qubit1, int qubit2);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled SWAP gate on @p qubit1 and @p qubit2 of @p qureg.
+ * 
+ * > - See applySwap() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledSwap(Qureg qureg, int* controls, int numControls, int qubit1, int qubit2);
 
 
@@ -1391,7 +1459,15 @@ void applySqrtSwap(Qureg qureg, int qubit1, int qubit2);
 void applyControlledSqrtSwap(Qureg qureg, int control, int qubit1, int qubit2);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled square-root-of-SWAP gate on @p qubit1 and @p qubit2 of @p qureg.
+ * 
+ * > - See applySqrtSwap() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledSqrtSwap(Qureg qureg, int* controls, int numControls, int qubit1, int qubit2);
 
 
@@ -1514,15 +1590,39 @@ void applyControlledPauliY(Qureg qureg, int control, int target);
 void applyControlledPauliZ(Qureg qureg, int control, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled Pauli @c X operator (or NOT gate) upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyPauliX() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPauliX(Qureg qureg, int* controls, int numControls, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled Pauli @c Y operator (or NOT gate) upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyPauliY() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPauliY(Qureg qureg, int* controls, int numControls, int target);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled Pauli @c Z operator (or NOT gate) upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyPauliZ() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPauliZ(Qureg qureg, int* controls, int numControls, int target);
 
 
@@ -1655,7 +1755,15 @@ void applyPauliStr(Qureg qureg, PauliStr str);
 void applyControlledPauliStr(Qureg qureg, int control, PauliStr str);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled tensor product of Pauli operators @p str upon @p qureg.
+ * 
+ * > - See applyPauliStr() for information about @p str.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPauliStr(Qureg qureg, int* controls, int numControls, PauliStr str);
 
 
@@ -1870,15 +1978,42 @@ void applyControlledRotateY(Qureg qureg, int control, int target, qreal angle);
 void applyControlledRotateZ(Qureg qureg, int control, int target, qreal angle);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled one-qubit rotation of @p angle around the @c X axis,
+ * upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyRotateX() for information about the base operation, and @p angle.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledRotateX(Qureg qureg, int* controls, int numControls, int target, qreal angle);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled one-qubit rotation of @p angle around the @c Y axis,
+ * upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyRotateY() for information about the base operation, and @p angle.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledRotateY(Qureg qureg, int* controls, int numControls, int target, qreal angle);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled one-qubit rotation of @p angle around the @c Z axis,
+ * upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyRotateZ() for information about the base operation, and @p angle.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledRotateZ(Qureg qureg, int* controls, int numControls, int target, qreal angle);
 
 
@@ -1999,7 +2134,16 @@ void applyRotateAroundAxis(Qureg qureg, int target, qreal angle, qreal axisX, qr
 void applyControlledRotateAroundAxis(Qureg qureg, int control, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled one-qubit rotation of @p angle around an arbitrary axis,
+ * upon the @p target qubit of @p qureg.
+ * 
+ * > - See applyRotateAroundAxis() for information about the base operation, @p angle, @p axisX, @p axisY and @p axisZ.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledRotateAroundAxis(Qureg qureg, int* controls, int numControls, int target, qreal angle, qreal axisX, qreal axisY, qreal axisZ);
 
 
@@ -2195,7 +2339,16 @@ void applyNonUnitaryPauliGadget(Qureg qureg, PauliStr str, qcomp angle);
 void applyControlledPauliGadget(Qureg qureg, int control, PauliStr str, qreal angle);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled many-qubit rotation upon @p qureg, 
+ * generated by tensor product of Pauli operators @p str.
+ * 
+ * > - See applyPauliGadget() for information about the base operation, @p angle, and @p str.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPauliGadget(Qureg qureg, int* controls, int numControls, PauliStr str, qreal angle);
 
 
@@ -2296,7 +2449,16 @@ void applyPhaseGadget(Qureg qureg, int* targets, int numTargets, qreal angle);
 void applyControlledPhaseGadget(Qureg qureg, int control, int* targets, int numTargets, qreal angle);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled many-qubit @c Z rotation upon @p qureg, 
+ * generated by a tensor product of Pauli @c Z operators upon @p targets.
+ * 
+ * > - See applyPhaseGadget() for information about the base operation, @p angle, and @p targets.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledPhaseGadget(Qureg qureg, int* controls, int numControls, int* targets, int numTargets, qreal angle);
 
 
@@ -2646,7 +2808,16 @@ void applyMultiQubitNot(Qureg qureg, int* targets, int numTargets);
 void applyControlledMultiQubitNot(Qureg qureg, int control, int* targets, int numTargets);
 
 
-/// @notyetdoced
+/** @notyetdoced
+ *
+ * Applies a multiply-controlled many-qubit NOT gate (or tensor product of Pauli @c X operators)
+ * upon the @p targets of @p qureg.
+ * 
+ * > - See applyMultiQubitNot() for information about the base operation.
+ * > - See applyMultiControlledCompMatr1() for information about @p controls.
+ * 
+ * @author Tyson Jones
+ */
 void applyMultiControlledMultiQubitNot(Qureg qureg, int* controls, int numControls, int* targets, int numTargets);
 
 
