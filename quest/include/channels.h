@@ -267,7 +267,12 @@ typedef struct {
      * 
      * The property of being CPTP is measured approximately, with reference to the validation
      * epsilon as modified with setQuESTValidationEpsilon(). The flag will never be updated from
-     * @c =-1 when validation is disabled.
+     * @c =-1 when validation is disabled. Like all epsilon-dependent fields, it is restored
+     * to @c =-1 automatically whenever setValidationEpsilon() or setValidationEpsilonToDefault()
+     * are called.
+     * 
+     * To skip CPTP validation in mixKrausMap(), users can directly mutate this field to
+     * @c =1, although it is not advised.
      */
     int* isApproxCPTP;
 

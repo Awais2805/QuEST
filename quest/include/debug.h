@@ -131,6 +131,13 @@ void setQuESTSeeds(unsigned* seeds, int numSeeds);
  * > In distributed simulation, only the root node's seeds are consulted (and broadcast
  * > to all nodes) while those passed on all other nodes are ignored.
  * 
+ * Note that many data structures (e.g. CompMatr, DiagMatr, KrausMap) will assess epsilon-dependent
+ * validation properties such as unitarity _once_, recording the result in a persistent heap field
+ * (like KrausMap.isApproxCPTP) to avoid superfluous re-calculation.
+ * Updating the global validation epsilon via this function will update all persistent heap fields,
+ * marking epsilon-dependent properties as "unknown", which will be lazily re-evaluated when validation
+ * is next performed. Ergo, calling this function can cause later additional function overheads.
+ * 
  * @myexample
  * ```
     // make report() print only one trailing newline
@@ -422,6 +429,13 @@ void setQuESTValidationEpsilonToDefault();
  * 
  * The default validation epsilon, which can itself be controlled by the `QUEST_DEFAULT_VALIDATION_EPSILON`
  * environment variable, is restored via setQuESTValidationEpsilonToDefault().
+ * 
+ * Note that many data structures (e.g. CompMatr, DiagMatr, KrausMap) will assess epsilon-dependent
+ * validation properties such as unitarity _once_, recording the result in a persistent heap field
+ * (like KrausMap.isApproxCPTP) to avoid superfluous re-calculation.
+ * Updating the global validation epsilon via this function will update all persistent heap fields,
+ * marking epsilon-dependent properties as "unknown", which will be lazily re-evaluated when validation
+ * is next performed. Ergo, calling this function can cause later additional function overheads.
  * 
  * @myexample
  * 
