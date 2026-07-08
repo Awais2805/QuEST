@@ -82,6 +82,12 @@
  * functions by-value, or be returned from them. However, its destructor
  * must only ever be called upon one such copy.
  * 
+ * @myexample
+ * 
+ * See [C](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/initialising_superoperators.c) and 
+ *   [C++](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/initialising_superoperators.cpp) 
+ * examples of initialising SuperOp.
+ * 
  * @see
  * - createSuperOp()
  * - [createInlineSuperOp()](https://quest-kit.github.io/QuEST/group__channels__create.html#ga0ee76da0f63c68a2bf26c6dda973436d)
@@ -189,6 +195,12 @@ typedef struct {
  * Like all QuEST structs, a KrausMap is safe to copy, and ergo to pass to
  * functions by-value, or be returned from them. However, its destructor
  * must only ever be called upon one such copy.
+ * 
+ * @myexample
+ * 
+ * See [C](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/initialising_krausmaps.c) and 
+ *   [C++](https://github.com/QuEST-Kit/QuEST/blob/main/examples/isolated/initialising_krausmaps.cpp) 
+ * examples of initialising KrausMap.
  * 
  * @see
  * - createKrausMap()
