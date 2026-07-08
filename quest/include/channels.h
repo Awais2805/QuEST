@@ -70,49 +70,205 @@
  */
 
 
-/// @notyetdoced
+/** A superoperator which acts upon both the ket and bra space of a
+ * linearised density matrix, which can represent more transformations
+ * than a KrausMap.
+ * 
+ * An @f$n@f$-qubit superoperator is instantiated as a @f$2^{2n}\times 2^{2n}@f$
+ * complex matrix, and can only be applied upon density matrices of @f$n@f$ or
+ * more density matrices.
+ * 
+ * Like all QuEST structs, a SuperOp is safe to copy, and ergo to pass to
+ * functions by-value, or be returned from them. However, its destructor
+ * must only ever be called upon one such copy.
+ * 
+ * @see
+ * - createSuperOp()
+ * - [createInlineSuperOp()](https://quest-kit.github.io/QuEST/group__channels__create.html#ga0ee76da0f63c68a2bf26c6dda973436d)
+ * - setSuperOp()
+ * - syncSuperOp()
+ * - reportSuperOp()
+ * - mixSuperOp()
+ * - destroySuperOp()
+ */
 typedef struct {
 
+    /** The number of qubits of the superoperator. 
+     * 
+     * This is _half_ the number of qubit substates of the linearised density
+     * matrix upon which the superoperator acts, but is consistent with the space
+     * acted upon by an equivalent a channel or unitary.
+     * 
+     * The total memory costs of the superoperator scale exponentially with the
+     * number of qubits; an @f$n@f$-qubit superoperator contains @f$16^n@f$
+     * complex elements.
+     */
     int numQubits;
+
+    /** The dimension of the superoperator, which is a square matrix, and so
+     * equals both the number of rows and columns.
+     * 
+     * Letting @f$n=@f$ #numQubits, then #numRows @f$=4^n@f$.
+     */
     qindex numRows;
     
-    // 2D CPU memory, which users can manually overwrite like cpuElems[i][j],
-    // but which actually merely aliases the 1D cpuElemsFlat below
+    /** The 2D matrix elements of the CPU operator, stored in CPU host memory.
+     * 
+     * It is safest to modify this matrix through setSuperOp(), but direct modification
+     * is possible; the matrix element of the `r`-th row and `c`-th colum is stored
+     * at `cpuElems[r][c]`.
+     * 
+     * > [!IMPORTANT]
+     * > It is _critical_ to call syncSuperOp() after direct modification of
+     * > #cpuElems in order to update persistent superoperator properties,
+     * > such as its data in GPU device memory (even when not running in
+     * > GPU-accelerated mode).
+     * 
+     * The field #cpuElems merely aliases the 1D #cpuElemsFlat field, such that
+     * modifications of #cpuElems also updates #cpuElemsFlat.
+     */
     qcomp** cpuElems;
 
-    // row-major flattened elements of cpuElems, always allocated
+    /** A 1D row-major form of #cpuElems.
+     * 
+     * Modification of the superoperator matrix should be done through #cpuElems
+     * for mathematical clarity, though this 1D contiguous form may be convenient
+     * when performing copying.
+     * 
+     * > [!IMPORTANT]
+     * > It is _critical_ to call syncSuperOp() after direct modification of
+     * > #cpuElemsFlat in order to update persistent superoperator properties,
+     * > such as its data in GPU device memory (even when not running in
+     * > GPU-accelerated mode).
+     */
     qcomp* cpuElemsFlat;
 
-    // row-major flattened elems in GPU memory, allocated 
-    // only and always in GPU-enabled QuEST environments
+    /** The elements of the superoperator matrix, stored in GPU device memory,
+     * in a 1D row-major form.
+     * 
+     * This is a copy of #cpuElemsFlat consulted by QuEST's GPU backend and should
+     * _never_ be modified directly. Instead, it is updated by calling syncSuperOp()
+     * after modifying #cpuElems or #cpuElemsFlat, which is performed automatically by
+     * API functions like setSuperOp(). In this way, #gpuElemsFlat and #cpuElemsFlat
+     * should never be out of sync with one another.
+     * 
+     * Within a GPU-enabled QuEST environment, every SuperOp allocates #gpuElemsFlat
+     * in GPU memory, even if never ultimately consulted from the GPU backend.
+     */
     qcomp* gpuElemsFlat;
 
-    // whether the user has ever synchronised memory to the GPU, which is performed automatically
-    // when calling functions like setCompMatr(), but which requires manual invocation with
-    // syncCompMatr() after manual modification of the cpuElem. Note this can only indicate whether
-    // the matrix has EVER been synced; it cannot be used to detect whether manual modifications
-    // made after an initial sync have been re-synched. This is a heap pointer to remain mutable.
+    /** Whether the superoperator matrix elements were ever synchronised.
+     * 
+     * This is a heap pointer to a persistent flag which is initially @c 0 at SuperOp creation,
+     * but which is permanently overwritten to @c 1 when synchronisation is performed, such as
+     * via syncSuperOp() or setSuperOp(). The flag indicates whether the superoperator matrix
+     * elements have been initialised (and when QuEST is GPU-accelerated, whether they have been
+     * copied to GPU device memory)), and ergo whether it is valid to pass the SuperOp to a
+     * simulation function like mixSuperOp().
+     * 
+     * Note this flag can only indicate whether the matrix has _ever_ been synced; it cannot be
+     * used to detect whether manual modification of #cpuElems made after an initial sync have been
+     * re-synced, as required for correct behaviour in GPU mode. 
+     */
     int* wasGpuSynced;
 
 } SuperOp;
 
 
-/// @notyetdoced
+/** A Kraus map which can act upon density matrices, and can describe any
+ * physical operation or channel.
+ * 
+ * A @f$t@f$-operator @f$n@f$-qubit KrausMap is described by @f$t@f$ complex matrices,
+ * each of dimension @f$2^n\times 2^n@f$; the equivalent size of an @f$n@f$-qubit unitary.
+ * A KrausMap can be applied upon density matrices of @f$n@f$ or more qubits.
+ * 
+ * Due to its internal representation as a SuperOp with matrix dimension
+ * @f$2^{2n}\times 2^{2n}@f$, the total memory costs of a KrausMap scale exponentially 
+ * with the number of qubits as @f$16^n@f$.
+ * 
+ * Like all QuEST structs, a KrausMap is safe to copy, and ergo to pass to
+ * functions by-value, or be returned from them. However, its destructor
+ * must only ever be called upon one such copy.
+ * 
+ * @see
+ * - createKrausMap()
+ * - [createInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__create.html#gae9c49a6443896ef590ff1e4cfaa4912b)
+ * - setKrausMap()
+ * - syncKrausMap()
+ * - reportKrausMap()
+ * - mixKrausMap()
+ * - destroyKrausMap()
+ */
 typedef struct {
 
+    /** The number of qubits of the Kraus map. 
+     * 
+     * Letting @f$n=@f$ #numQubits, each Kraus operator in the map is a @f$2^n\times 2^n@f$
+     * complex matrix, and the full map is described by a @f$2^{2n}\times 2^{2n}@f$ 
+     * superoperator; a total of @f$16^n@f$ complex elements.
+     */
     int numQubits;
 
-    // representation of the map as a collection of Kraus operators, kept exclusively 
-    // in CPU memory, and used only for CPTP validation and reporting the map
+    /** The number of Kraus operators in the map.
+     * 
+     * For example, a KrausMap form of an amplitude damping channel would contain
+     * @c numMatrices=2, and a two-qubit depolarising channel would contain
+     * @c numMatrices=16.
+     */
     int numMatrices;
+
+    /** The dimension of each Kraus operator, which is a square matrix, and so
+     * equivalent to the number of rows and columns.
+     * 
+     * Letting @f$n=@f$ #numQubits, then #numRows @f$=2^n@f$.
+     */
     qindex numRows;
+
+    /** A list of each Kraus oeprator's 2D matrix, stored in CPU host memory.
+     * 
+     * It is safest to modify this matrix through setKrausMap(), but direct modification
+     * is possible; the matrix element of the `r`-th row and `c`-th colum of the `i`-th
+     * operator is stored at `matrices[i][r][c]`.
+     * 
+     * > [!IMPORTANT]
+     * > It is _critical_ to call syncKrausMap() after direct modification of
+     * > #matrices in order to update persistent KrausMap properties,
+     * > such as its SuperOp data in GPU device memory (even when not running in
+     * > GPU-accelerated mode).
+     * 
+     * Unlike other data structures (such as CompMatr), KrausMap has no GPU device memory
+     * copy of #matrices, since only the superoperator (stored within #superop) is
+     * needed on the device. In fact, #matrices is only used for convenient
+     * initialisation of a KrausMap, for validation of CPTP, and for printing by
+     * reportKrausMap().
+     */
     qcomp*** matrices;
 
-    // representation of the map as a single superoperator, used for simulation
+    /** A superoperator representation of the KrausMap.
+     * 
+     * This is computed from #matrices during syncKrausMap() (as automatically invoked
+     * by setKrausMap()), and is used by QuEST's simulation backend to effect the Kraus
+     * map upon a density matrix.
+     * 
+     * Since this is the only field of KrausMap needing synchronisation, KrausMap
+     * itself lacks an explicit @c wasGpuSynced field, and instead uses that attached
+     * to #superop.
+     */
     SuperOp superop;
 
-    // CPTP-ness is determined at validation; 0 or 1, or -1 to indicate unknown. The flag is 
-    // stored in heap so even copies of structs are mutable, but pointer itself is immutable.
+    /** Whether the Kraus map is known to be (within validation epsilon tolerance) 
+     * completely positive and trace preserving (@c =1), or known to be non-CPTP (@c =0),
+     * or whether it is unknown (@c =-1).
+     * 
+     * This is a heap pointer to a persistent flag which is initially @c =-1 at KrausMap
+     * creation, and is only ever consulted and/or updated by input validation within 
+     * mixKrausMap(), when such validation is enabled. Calling setKrausMap() or syncKrausMap()
+     * restores #isApproxCPTP to @c =-1.
+     * 
+     * The property of being CPTP is measured approximately, with reference to the validation
+     * epsilon as modified with setQuESTValidationEpsilon(). The flag will never be updated from
+     * @c =-1 when validation is disabled.
+     */
     int* isApproxCPTP;
 
 } KrausMap;
