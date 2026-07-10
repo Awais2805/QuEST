@@ -84,11 +84,11 @@
  */
 typedef struct {
 
-    /** The number of qubits upon which the matrix can act, which is always @c =1 @f$.
+    /** The number of qubits upon which the matrix can act, which is always @c =1.
      */
     int numQubits;
 
-    /** The matrix dimension, which is always @c =2 @f$.
+    /** The matrix dimension, which is always @c =2.
      */
     qindex numRows;
 
@@ -119,11 +119,11 @@ typedef struct {
  */
 typedef struct {
 
-    /** The number of qubits upon which the matrix can act, which is always @c =2 @f$.
+    /** The number of qubits upon which the matrix can act, which is always @c =2.
      */
     int numQubits;
 
-    /** The matrix dimension, which is always @c =4 @f$.
+    /** The matrix dimension, which is always @c =4.
      */
     qindex numRows;
 
@@ -182,7 +182,7 @@ typedef struct {
      * non-unitary (@c =0), or whether it is unknown (@c =-1).
      * 
      * This is a heap pointer to a persistent flag which is initially @c =-1 at matrix creation, and
-     * is only ever consulted and/or updated by input valdiation within functions like applyCompMatr(),
+     * is only ever consulted and/or updated by input validation within functions like applyCompMatr(),
      * when such validation is enabled. Calling setCompMatr() or syncCompMatr() restores #isApproxUnitary 
      * to @c -1.
      * 
@@ -201,13 +201,13 @@ typedef struct {
      * be non-Hermitian (@c =0), or whether it is unknown (@c =-1).
      * 
      * This is a heap pointer to a persistent flag which is initially @c =-1 at matrix creation, and
-     * is only ever consulted and/or updated by input valdiation within functions which expect
+     * is only ever consulted and/or updated by input validation within functions which expect
      * Hermiticity. Calling setCompMatr() or syncCompMatr() restores 
      * #isApproxHermitian to @c -1.
      * 
      * > [!NOTE]
      * > There are presently _no_ QuEST functions which expect Hermiticity of a CompMatr, 
-     * > and so this field is presently never modified from its initial valeu of @c =-1.
+     * > and so this field is presently never modified from its initial value of @c =-1.
      * 
      * Hermiticity is measured approximately, with reference to the validation
      * epsilon as modified with setQuESTValidationEpsilon(). This flag will never be updated from
@@ -224,7 +224,7 @@ typedef struct {
      * 
      * This is a heap pointer to a persistent flag which is initially @c 0 at matrix creation,
      * but which is permanently overwritten to @c 1 when synchronisation is performed, such as
-     * via syncCompMatr() or setCompmatr(). The flag indicates whether the matrix
+     * via syncCompMatr() or setCompMatr(). The flag indicates whether the matrix
      * elements have been initialised (and when QuEST is GPU-accelerated, whether they have been
      * copied to GPU device memory), and ergo whether it is valid to pass the matrix to a
      * simulation function like applyCompMatr().
@@ -241,7 +241,7 @@ typedef struct {
     /** The 2D matrix elements, stored in CPU host memory.
      * 
      * It is safest to modify this matrix through setCompMatr(), but direct modification
-     * is possible; the matrix element of the `r`-th row and `c`-th colum is stored
+     * is possible; the matrix element of the `r`-th row and `c`-th column is stored
      * at `cpuElems[r][c]`.
      * 
      * > [!IMPORTANT]
@@ -322,11 +322,11 @@ typedef struct {
  */
 typedef struct {
 
-    /** The number of qubits upon which the matrix can act, which is always @c =1 @f$.
+    /** The number of qubits upon which the matrix can act, which is always @c =1.
      */
     int numQubits;
 
-    /** The matrix dimension, equal to the number of contained diagonal elements, which is always @c =2 @f$.
+    /** The matrix dimension, equal to the number of contained diagonal elements, which is always @c =2.
      */
     qindex numElems;
 
@@ -358,11 +358,11 @@ typedef struct {
  */
 typedef struct {
 
-    /** The number of qubits upon which the matrix can act, which is always @c =2 @f$.
+    /** The number of qubits upon which the matrix can act, which is always @c =2.
      */
     int numQubits;
 
-    /** The matrix dimension, equal to the number of contained diagonal elements, which is always @c =4 @f$.
+    /** The matrix dimension, equal to the number of contained diagonal elements, which is always @c =4.
      */
     qindex numElems;
 
@@ -422,7 +422,7 @@ typedef struct {
      * non-unitary (@c =0), or whether it is unknown (@c =-1).
      * 
      * This is a heap pointer to a persistent flag which is initially @c =-1 at matrix creation, and
-     * is only ever consulted and/or updated by input valdiation within functions like applyDiagMatr(),
+     * is only ever consulted and/or updated by input validation within functions like applyDiagMatr(),
      * when such validation is enabled. Calling setDiagMatr() or syncDiagMatr() restores #isApproxUnitary 
      * to @c -1.
      * 
@@ -442,7 +442,7 @@ typedef struct {
      * 
      * > [!NOTE]
      * > There are presently _no_ QuEST functions which expect Hermiticity of a DiagMatr, 
-     * > and so this field is presently never modified from its initial valeu of @c =-1.
+     * > and so this field is presently never modified from its initial value of @c =-1.
      * 
      * This field has all the same nuances and mechanisms as #isApproxUnitary.
      */
@@ -607,10 +607,10 @@ typedef struct {
 
     /** Whether the matrix is (within validation epsilon tolerance) unitary (@c =1), or known to be
      * non-unitary (@c =0), or whether it is unknown (@c =-1).
-     * 
+     *
      * This is a heap pointer to a persistent flag which is initially @c =-1 at matrix creation, and
-     * is only ever consulted and/or updated by input valdiation within functions like 
-     * applyFullStateDiagMatr(), when such validation is enabled. Calling functions like 
+     * is only ever consulted and/or updated by input validation within functions like
+     * applyFullStateDiagMatr(), when such validation is enabled. Calling functions like
      * setFullStateDiagMatr() or syncFullStateDiagMatr() restores #isApproxUnitary to @c -1.
      * 
      * Unitarity is measured approximately, with reference to the validation
