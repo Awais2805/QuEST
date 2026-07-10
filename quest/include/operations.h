@@ -187,6 +187,8 @@ digraph {
         \dmrho \rightarrow C_c[\hat{U}_t] \, \dmrho \, {C_c[\hat{U}_t]}^\dagger.
  *   @f]
  *
+ * The amplitudes which _are_ modified, are done so in an identical fashion as in applyCompMatr1().
+ *
  * @constraints
  * 
  * - Unitarity of @f$ \hat{U} = @f$ @p matrix requires that 
@@ -234,8 +236,9 @@ digraph {
  * - if @p qureg or @p matrix are uninitialised.
  * - if @p matrix is not approximately unitary.
  * - if @p control or @p target are an invalid qubit index.
- * - if @p control and @p target overlap.
+ * - if @p control and @p target are equal.
  * @see
+ * - applyCompMatr1()
  * - applyMultiControlledCompMatr1()
  * - applyMultiStateControlledCompMatr1()
  * @author Tyson Jones
@@ -243,9 +246,7 @@ digraph {
 void applyControlledCompMatr1(Qureg qureg, int control, int target, CompMatr1 matrix);
 
 
-/** @notyetdoced
- * 
- * Applies a multiply-controlled one-qubit dense unitary @p matrix to the specified 
+/** Applies a multiply-controlled one-qubit dense unitary @p matrix to the specified 
  * @p target qubit of @p qureg.
  * 
  * @diagram
@@ -300,16 +301,28 @@ digraph {
       + \ketbra{n}{n}_{\vec{c}} \otimes \hat{U}_t
  * @f]
  *
+ * The amplitudes which _are_ modified, are done so in an identical fashion as in applyCompMatr1().
+ *
+ * @param[in,out] qureg       the state to modify.
+ * @param[in]     controls    a list of control qubits.
+ * @param[in]     numControls the length of @p controls.
+ * @param[in]     target      the target qubit.
+ * @param[in]     matrix      the Z-basis unitary matrix to effect.
+ * @throws @validationerror
+ * - if @p qureg or @p matrix are uninitialised.
+ * - if @p matrix is not approximately unitary.
+ * - if @p target or any element of @p controls are an invalid qubit index.
+ * - if @p controls contains duplicates, or includes @p target.
+ * - if @p numControls is negative.
  * @see
  * - applyCompMatr1()
+ * - applyMultiStateControlledCompMatr1()
  * @author Tyson Jones
  */
 void applyMultiControlledCompMatr1(Qureg qureg, int* controls, int numControls, int target, CompMatr1 matrix);
 
 
-/** @notyetdoced
- * 
- * Applies an arbitrarily-controlled one-qubit dense unitary @p matrix to the specified 
+/** Applies an arbitrarily-controlled one-qubit dense unitary @p matrix to the specified 
  * @p target qubit of @p qureg, conditioned upon the @p controls being in the corresponding @p states.
  * 
  * @diagram
@@ -346,6 +359,51 @@ digraph {
 }
  * @enddot
  *
+ * @formulae
+ * 
+ * Let @f$ \vec{c} = @f$ @p controls, @f$ t = @f$ @p target, @f$ \hat{U} = @f$ @p matrix and
+ * @f$n = 2^{|\vec{c}|}-1@f$. Let @f$ \ket{s}_{\vec{c}} @f$ be the computational substate formed by
+ * the qubits in @p controls being in the corresponding @p states.
+ * 
+ * This function applies the operator 
+ * 
+ * @f[
+      \sum\limits_{i=0, i \ne s}^{n} \ketbra{i}{i}_{\vec{c}} \otimes \hat{\id}_t
+      + \ketbra{s}{s}_{\vec{c}} \otimes \hat{U}_t
+ * @f]
+ *
+ * The amplitudes which _are_ modified, are done so in an identical fashion as in applyCompMatr1().
+ * 
+ * @equivalences
+ * 
+ * - This function is faster than, but mathematically equivalent to, applying a Pauli @c X
+ *   upon every zero-controlled qubit, applying the matrix with all one-controls, then undoing
+ *   the flipped qubits.
+ *   ```cpp
+      for (int i=0; i<numControls; i++)
+          if (states[i] == 0)
+              applyPauliX(qureg, controls[i]);
+
+      applyMultiControlledCompMatr1(qureg, controls, numControls, target, matrix);
+
+      for (int i=0; i<numControls; i++)
+          if (states[i] == 0)
+              applyPauliX(qureg, controls[i]);
+ *   ```
+ *
+ * @param[in,out] qureg       the state to modify.
+ * @param[in]     controls    a list of control qubits.
+ * @param[in]     states      a list of corresponding qubit states (each, @c 0 or @c 1).
+ * @param[in]     numControls the length of @p controls and @p states.
+ * @param[in]     target      the target qubit.
+ * @param[in]     matrix      the Z-basis unitary matrix to effect.
+ * @throws @validationerror
+ * - if @p qureg or @p matrix are uninitialised.
+ * - if @p matrix is not approximately unitary.
+ * - if @p target or any element of @p controls are an invalid qubit index.
+ * - if @p controls contains duplicates, or includes @p target.
+ * - if @p numControls is negative.
+ * - if @p states contains any element besides @c 0 or @c 1.
  * @see
  * - applyCompMatr1()
  * @author Tyson Jones
@@ -675,6 +733,8 @@ void applyMultiControlledCompMatr(Qureg qureg, int* controls, int numControls, i
  * 
  * > - See applyCompMatr() for information about @p targets and @p matrix.
  * > - See applyMultiStateControlledCompMatr1() for information about @p controls and @p states.
+ * 
+ * @author Tyson Jones
  */
 void applyMultiStateControlledCompMatr(Qureg qureg, int* controls, int* states, int numControls, int* targets, int numTargets, CompMatr matrix);
 

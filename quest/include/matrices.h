@@ -414,7 +414,7 @@ typedef struct {
    /** The dimension of the matrix, which is a square matrix, and so
      * equals both the number of rows and columns, and the number of diagonal terms.
      * 
-     * Letting @f$n=@f$ #numQubits, then #numRows @f$=2^n@f$.
+     * Letting @f$n=@f$ #numQubits, then #numElems @f$=2^n@f$.
      */
     qindex numElems;
 
@@ -564,7 +564,7 @@ typedef struct {
    /** The total dimension of the matrix, which is a square matrix, and so
      * equals both the number of rows and columns, and the number of diagonal terms.
      * 
-     * Letting @f$n=@f$ #numQubits, then #numRows @f$=2^n@f$. This is the total number
+     * Letting @f$n=@f$ #numQubits, then #numElems @f$=2^n@f$. This is the total number
      * of elements across all nodes, and so is independent of whether the matrix is
      * distributed.
      */
