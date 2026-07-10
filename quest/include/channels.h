@@ -118,7 +118,7 @@ typedef struct {
      */
     qindex numRows;
     
-    /** The 2D matrix elements of the CPU operator, stored in CPU host memory.
+    /** The 2D matrix elements of the operator, stored in CPU host memory.
      * 
      * It is safest to modify this matrix through setSuperOp(), but direct modification
      * is possible; the matrix element of the `r`-th row and `c`-th colum is stored
@@ -132,6 +132,9 @@ typedef struct {
      * 
      * The field #cpuElems merely aliases the 1D #cpuElemsFlat field, such that
      * modifications of #cpuElems also updates #cpuElemsFlat.
+     * 
+     * @see
+     * - syncSuperOp()
      */
     qcomp** cpuElems;
 
@@ -146,6 +149,9 @@ typedef struct {
      * > #cpuElemsFlat in order to update persistent superoperator properties,
      * > such as its data in GPU device memory (even when not running in
      * > GPU-accelerated mode).
+     * 
+     * @see
+     * - syncSuperOp()
      */
     qcomp* cpuElemsFlat;
 
@@ -169,12 +175,15 @@ typedef struct {
      * but which is permanently overwritten to @c 1 when synchronisation is performed, such as
      * via syncSuperOp() or setSuperOp(). The flag indicates whether the superoperator matrix
      * elements have been initialised (and when QuEST is GPU-accelerated, whether they have been
-     * copied to GPU device memory)), and ergo whether it is valid to pass the SuperOp to a
+     * copied to GPU device memory), and ergo whether it is valid to pass the SuperOp to a
      * simulation function like mixSuperOp().
      * 
      * Note this flag can only indicate whether the matrix has _ever_ been synced; it cannot be
      * used to detect whether manual modification of #cpuElems made after an initial sync have been
-     * re-synced, as required for correct behaviour in GPU mode. 
+     * re-synced, as required for correct behaviour in GPU mode.
+     * 
+     * @see
+     * - syncSuperOp()
      */
     int* wasGpuSynced;
 
@@ -285,6 +294,9 @@ typedef struct {
      * 
      * To skip CPTP validation in mixKrausMap(), users can directly mutate this field to
      * @c =1, although it is not advised.
+     * 
+     * @see
+     * - setQuESTValidationEpsilon()
      */
     int* isApproxCPTP;
 
