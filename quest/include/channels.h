@@ -362,44 +362,129 @@ extern "C" {
 
 
     /** @ingroup channels_create
-     * @notyetdoced
      * 
+     * Creates an uninitialised Kraus map.
+     *
+     * The returned KrausMap contains @p numOperators Kraus operators, each of which
+     * spans @p numQubits many qubits. Before being passed to functions like
+     * reportKrausMap() and mixKrausMap(), its elements must be populated with
+     * setKrausMap() or setInlineKrausMap(), or directly modified through KrausMap::matrices,
+     * though any direct modification must be followed by a call to syncKrausMap().
+     *
+     * The returned KrausMap should be later destroyed with destroyKrausMap().
+     * 
+     * > See [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c)
+     * > or [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) 
+     * > examples of initialising a KrausMap.
+     *
+     * @param[in] numQubits     the number of qubits acted upon by the Kraus map.
+     * @param[in] numOperators  the number of Kraus operators in the map.
+     * @returns A new KrausMap instance.
+     * @throws @validationerror
+     * - if the QuEST environment is not initialised.
+     * - if @p numQubits or @p numOperators are invalid.
+     * - if the dimensions or memory requirements overflow.
+     * - if any memory allocation fails.
      * @see
-     * - createInlineKrausMap
+     * - [createInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__create.html#gae9c49a6443896ef590ff1e4cfaa4912b)
      * - createSuperOp()
      * - setKrausMap()
-     * - setInlineKrausMap
+     * - [setInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__setters.html#ga3c60440fa9503c235e46d964bc58d3ec)
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
+     * @author Tyson Jones
      */
     KrausMap createKrausMap(int numQubits, int numOperators);
 
 
     /** @ingroup channels_sync
-     * @notyetdoced
      * 
+     * Updates the internal state of @p map, necessary after manually modifying KrausMap::matrices.
+     *
+     * @param[in,out] map  the KrausMap to synchronise.
+     * @throws @validationerror
+     * - if @p map is uninitialised.
      * @see
      * - setKrausMap()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
+     * @author Tyson Jones
      */
     void syncKrausMap(KrausMap map);
 
 
-    /// @ingroup channels_destroy
-    /// @notyetdoced
+    /** @ingroup channels_destroy
+     * Destroys a KrausMap, freeing its Kraus operators and internal SuperOp.
+     *
+     * Since @p map is passed by value, this function cannot nullify the caller's
+     * copy of the KrausMap fields. The caller must not use @p map after destruction.
+     *
+     * @param[in] map  the KrausMap to destroy.
+     * @throws @validationerror
+     * - if @p map is uninitialised.
+     * @author Tyson Jones
+     */
     void destroyKrausMap(KrausMap map);
 
 
-    /// @ingroup channels_reporters
-    /// @notyetdoced
-    /// @notyettested
+    /** @ingroup channels_reporters
+     * Prints a KrausMap.
+     * 
+     * @myexample
+     * 
+     * ```cpp
+        KrausMap map = createInlineKrausMap(1, 3, {
+            {{1,2},{3,4}},
+            {{5,5},{6,6}},
+            {{1i,2i},{-3i,-4i}}
+        });
+        reportKrausMap(map);
+     * ```
+     * ```text
+        KrausMap (1 qubit, 3 2x2 matrices, 1 4x4 superoperator, 528 bytes):
+            [matrix 0]
+                1  2  
+                3  4  
+            [matrix 1]
+                5  5  
+                6  6  
+            [matrix 2]
+                i    2i   
+                -3i  -4i  
+     * ```
+     *
+     * @param[in] map  the KrausMap to print.
+     * @throws @validationerror
+     * - if @p map is uninitialised.
+     * @author Tyson Jones
+     */
     void reportKrausMap(KrausMap map);
 
 
     /** @ingroup channels_create
-     * @notyetdoced
      * 
+     * Creates an uninitialised superoperator.
+     *
+     * The returned SuperOp represents an arbitrary linear map on vectorised density
+     * matrices, spanning @p numQubits many ket-qubits and an equal number of bra-qubits.
+     * Before being passed to functions
+     * like reportSuperOp() and mixSuperOp(), its elements must be populated with
+     * setSuperOp() or setInlineSuperOp(), or directly modified through SuperOp::cpuElems,
+     * though direct modification must be followed by a call to syncSuperOp().
+     *
+     * The returned SuperOp should be later destroyed with destroySuperOp().
+     * 
+     * > See [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c)
+     * > or [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.cpp) 
+     * > examples of initialising a SuperOp.
+     *
+     * @param[in] numQubits  the number of qubits acted upon by the superoperator.
+     * @returns A new SuperOp instance.
+     * @throws @validationerror
+     * - if the QuEST environment is not initialised.
+     * - if @p numQubits is invalid.
+     * - if the dimensions or memory requirements overflow.
+     * - if any memory allocation fails.
      * @see
      * - createInlineSuperOp()
      * - createKrausMap()
@@ -407,29 +492,69 @@ extern "C" {
      * - setInlineSuperOp()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.cpp) examples
+     * @author Tyson Jones
      */
     SuperOp createSuperOp(int numQubits);
 
 
     /** @ingroup channels_sync
-     * @notyetdoced
      * 
+     * Updates the internal state of @p op, necessary after manually modifying SuperOp::cpuElems
+     * or SuperOp::cpuElemsFlat.
+     *
+     * @param[in,out] op  the SuperOp to synchronise.
+     * @throws @validationerror
+     * - if @p op is uninitialised.
      * @see
      * - setSuperOp()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.cpp) examples
+     * @author Tyson Jones
      */
     void syncSuperOp(SuperOp op);
 
 
-    /// @ingroup channels_destroy
-    /// @notyetdoced
+    /** @ingroup channels_destroy
+     * Destroys a SuperOp, freeing all its CPU and GPU memory.
+     *
+     * Since @p op is passed by value, this function cannot nullify the caller's
+     * copy of the SuperOp fields. The caller must not use @p op after destruction.
+     *
+     * @param[in] op  the SuperOp to destroy.
+     * @throws @validationerror
+     * - if @p op is uninitialised.
+     * @author Tyson Jones
+     */
     void destroySuperOp(SuperOp op);
 
 
-    /// @ingroup channels_reporters
-    /// @notyetdoced
-    /// @notyettested
+    /** @ingroup channels_reporters
+     * Prints a SuperOp.
+     * 
+     * @myexample
+     * 
+     * ```cpp
+        SuperOp op = createInlineSuperOp(1, {
+            {1,2,3,4},
+            {5,-(10E-2)*3.14i,7,8},
+            {9,10,11,12},
+            {13,14,15,16+1.23i}
+        });
+        reportSuperOp(op);
+     * ```
+     * ```text
+        SuperOp (1 qubit, 4x4 qcomps, 304 bytes):
+            1   2        3   4         
+            5   -0.314i  7   8         
+            9   10       11  12        
+            13  14       15  16+1.23i 
+     * ```
+     *
+     * @param[in] op  the SuperOp to print.
+     * @throws @validationerror
+     * - if @p op is uninitialised.
+     * @author Tyson Jones
+     */
     void reportSuperOp(SuperOp op);
 
 
@@ -456,25 +581,48 @@ extern "C" {
 
 
     /** @ingroup channels_setters
-     * @notyetdoced
      * 
+     * Overwrites the Kraus operators of @p map.
+     * 
+     * Argument @p matrices must be a list of KrausMap::numMatrices matrices, each of 
+     * dimension KrausMap::numRows by KrausMap::numRows.
+     * 
+     * This updates KrausMap::matrices and other internal properties. 
+     *
+     * @param[in,out] map       the KrausMap to overwrite.
+     * @param[in]     matrices  a 3D nested list of the above dimensions.
+     * @throws @validationerror
+     * - if @p map is uninitialised.
+     * @throws seg-fault
+     * - if @p matrices is not of the expected dimensions.
      * @see
-     * - setInlineKrausMap()
+     * - [setInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__setters.html#ga3c60440fa9503c235e46d964bc58d3ec)
      * - syncKrausMap()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
+     * @author Tyson Jones
      */
     void setKrausMap(KrausMap map, qcomp*** matrices);
 
 
     /** @ingroup channels_setters
-     * @notyetdoced
      * 
+     * Overwrites the elements of @p op.
+     *
+     * This copies @p matrix into SuperOp::cpuElems and synchronises @p op to GPU memory
+     * when relevant.
+     *
+     * @param[in,out] op      the SuperOp to overwrite.
+     * @param[in]     matrix  a SuperOp::numRows by SuperOp::numRows matrix of new elements.
+     * @throws @validationerror
+     * - if @p op is uninitialised.
+     * - if @p matrix is a null or invalid pointer.
      * @see
      * - setInlineSuperOp()
      * - syncSuperOp()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) or 
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.cpp) examples
+     * @author Tyson Jones
      */
     void setSuperOp(SuperOp op, qcomp** matrix);
 
@@ -512,7 +660,7 @@ extern "C" {
      * @cpponly
      * 
      * @see
-     * - setInlineKrausMap()
+     * - [setInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__setters.html#ga3c60440fa9503c235e46d964bc58d3ec)
      * - [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
      */
     void setKrausMap(KrausMap map, std::vector<std::vector<std::vector<qcomp>>> matrices);
@@ -600,25 +748,41 @@ extern "C" {
 
 
         /** @ingroup channels_setters
-         * @notyetdoced
+         * Overwrites the Kraus operators of @p map from a @c C array.
+         *
+         * This is a @c C convenience macro equivalent to setKrausMap().
+         *
+         * @param[in,out] map       the KrausMap to overwrite.
+         * @param[in]     matrices  a 3D array.
+         * @throws @validationerror
+         * - if @p map is uninitialised.
          * @conly
          * @macrodoc
          * 
          * @see
-         * - setInlineKrausMap()
+         * - [setInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__setters.html#ga3c60440fa9503c235e46d964bc58d3ec)
          * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) examples
+         * @author Tyson Jones
          */
         void setKrausMap(KrausMap map, qcomp matrices[map.numMatrices][map.numRows][map.numRows]);
 
 
         /** @ingroup channels_setters
-         * @notyetdoced
+         * Overwrites the elements of @p op from a @c C array.
+         *
+         * This is a @c C convenience macro equivalent to setSuperOp()
+         *
+         * @param[in,out] op      the SuperOp to overwrite.
+         * @param[in]     matrix  a SuperOp::numRows by SuperOp::numRows array.
+         * @throws @validationerror
+         * - if @p op is uninitialised.
          * @conly
          * @macrodoc
          * 
          * @see
          * - setInlineSuperOp()
          * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) examples
+         * @author Tyson Jones
          */
         void setSuperOp(SuperOp op, qcomp matrix[op.numRows][op.numRows]);
 
