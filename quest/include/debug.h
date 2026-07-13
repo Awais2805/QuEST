@@ -65,7 +65,7 @@ extern "C" {
 
     // seed
     unsigned seeds[] = {123456789u, 987654321u, 546372819u};
-    setQuESTSeeds(seeds, 2);
+    setQuESTSeeds(seeds, 3);
 
     // randomly collapse the plus state
     initPlusState(qureg);
@@ -74,7 +74,7 @@ extern "C" {
     reportScalar("outcome 2", applyQubitMeasurement(qureg, 2));
 
     // restore RNG to state prior to collapse
-    setQuESTSeeds(seeds, 2);
+    setQuESTSeeds(seeds, 3);
 
     // randomly collapse the plus state again, obtaining same outcomes
     reportStr("");
@@ -319,7 +319,7 @@ int getQuESTNumSeeds();
 
     int main() {
         initQuESTEnv();
-        setInputErrorHandler(myErrorHandler);
+        setQuESTInputErrorHandler(myErrorHandler);
         createQureg(9999); // invokes myErrorHandler
         ...
     }
@@ -857,8 +857,17 @@ void clearQuESTGpuCache();
  */
 
 
-/// @notyetdoced
-/// @notyettested
+/** Writes a compact description of the active QuEST environment into @p str.
+ *
+ * The caller must provide a character buffer of length at least @c 200. The
+ * resulting string is null-terminated and summarises the current deployment.
+ *
+ * @param[out] str  a character buffer of length @c 200 to overwrite.
+ * @throws @validationerror
+ * - if the QuEST environment is not initialised.
+ * @notyettested
+ * @author Tyson Jones
+ */
 void getQuESTEnvironmentString(char str[200]);
 
 
