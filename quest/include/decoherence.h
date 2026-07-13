@@ -601,7 +601,7 @@ void mixQureg(Qureg qureg, Qureg other, qreal prob);
  *   qubits in @p qureg minus half log-2 of the number of processes.
  * @see
  * - createKrausMap()
- * - createInlineKrausMap()
+ * - [createInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__create.html#gae9c49a6443896ef590ff1e4cfaa4912b)
  * - setKrausMap()
  * @author Tyson Jones
  */
