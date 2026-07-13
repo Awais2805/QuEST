@@ -149,8 +149,8 @@ typedef struct {
  * 
  * @see
  * - createCompMatr()
- * - [createInlineCompMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__create.html#gad0ac51cb08a5d0b4e0878a5fde7ca893)
- * - [setInlineCompMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
+ * - [createInlineCompMatr()](https://quest-kit.github.io/QuEST/group__matrices__create.html#gad0ac51cb08a5d0b4e0878a5fde7ca893)
+ * - [setInlineCompMatr()](https://quest-kit.github.io/QuEST/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
  * - setCompMatr()
  * - syncCompMatr()
  * - reportCompMatr()
@@ -255,7 +255,7 @@ typedef struct {
      * 
      * @see
      * - setCompMatr()
-     * - [setInlineCompMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
+     * - [setInlineCompMatr()](https://quest-kit.github.io/QuEST/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
      * - syncCompMatr()
      */
     qcomp** cpuElems;
@@ -274,7 +274,7 @@ typedef struct {
      * 
      * @see
      * - setCompMatr()
-     * - [setInlineCompMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
+     * - [setInlineCompMatr()](https://quest-kit.github.io/QuEST/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
      * - syncCompMatr()
      */
     qcomp* cpuElemsFlat;
@@ -393,8 +393,8 @@ typedef struct {
  * 
  * @see
  * - createDiagMatr()
- * - [createInlineDiagMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__create.html#gad0ac51cb08a5d0b4e0878a5fde7ca893)
- * - [setInlineDiagMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#ga00993b6b571985fd04697e487a561517)
+ * - [createInlineDiagMatr()](https://quest-kit.github.io/QuEST/group__matrices__create.html#gad0ac51cb08a5d0b4e0878a5fde7ca893)
+ * - [setInlineDiagMatr()](https://quest-kit.github.io/QuEST/group__matrices__setters.html#ga7b2c2e134546df6101c6001727bc6d69)
  * - setDiagMatr()
  * - syncDiagMatr()
  * - reportDiagMatr()
@@ -540,7 +540,7 @@ typedef struct {
  * 
  * @see
  * - createFullStateDiagMatr()
- * - [setInlineFullStateDiagMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
+ * - [setInlineFullStateDiagMatr()](fhttps://quest-kit.github.io/QuEST/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
  * - setFullStateDiagMatr()
  * - setFullStateDiagMatrFromMultiVarFunc()
  * - setFullStateDiagMatrFromMultiDimLists()
@@ -1338,7 +1338,7 @@ extern "C" {
      * @notyettested
      * 
      * @see
-     * - [setInlineFullStateDiagMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
+     * - [setInlineFullStateDiagMatr()](fhttps://quest-kit.github.io/QuEST/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
      * - reportFullStateDiagMatr()
      * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_matrices.c) and
      *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_matrices.cpp) examples
@@ -1402,7 +1402,7 @@ extern "C" {
      * @cpponly
      * 
      * @see
-     * - [setInlineFullStateDiagMatr()](file:///Users/tysonjones/Desktop/GithubRepos/QuEST/Doxygen_doc/html/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
+     * - [setInlineFullStateDiagMatr()](fhttps://quest-kit.github.io/QuEST/group__matrices__setters.html#gaa27aaa1a001a41f36a60847a19d824d4)
      * - reportFullStateDiagMatr()
      * - [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_matrices.cpp) examples
      */
