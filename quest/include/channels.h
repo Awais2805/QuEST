@@ -748,17 +748,37 @@ extern "C" {
 
 
         /** @ingroup channels_setters
+         * 
          * Overwrites the Kraus operators of @p map from a @c C array.
+         * 
+         * @macrodoc
+         * 
+         * @conly
          *
          * This is a @c C convenience macro equivalent to setKrausMap().
+         * 
+         * @myexample
+         * 
+         * ```c
+            qcomp arr[2][4][4] = {
+                {
+                    {1,2,3,4},
+                    {5,6,7,8},
+                    {9,8,7,6},
+                    {5,4,3,2},
+                }, {
+                    {1i,2i,3i},
+                    {5i}
+                }
+            };
+            KrausMap map = createKrausMap(2, 2);
+            setKrausMap(map, arr);
+         * ```
          *
          * @param[in,out] map       the KrausMap to overwrite.
          * @param[in]     matrices  a 3D array.
          * @throws @validationerror
          * - if @p map is uninitialised.
-         * @conly
-         * @macrodoc
-         * 
          * @see
          * - [setInlineKrausMap()](https://quest-kit.github.io/QuEST/group__channels__setters.html#ga3c60440fa9503c235e46d964bc58d3ec)
          * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) examples
@@ -768,18 +788,34 @@ extern "C" {
 
 
         /** @ingroup channels_setters
+         * 
          * Overwrites the elements of @p op from a @c C array.
+         * 
+         * @macrodoc
+         * 
+         * @conly
          *
-         * This is a @c C convenience macro equivalent to setSuperOp()
+         * This is a @c C convenience macro equivalent to setSuperOp().
+         * 
+         * @myexample
+         * 
+         * ```c
+            qcomp arr[4][4] = {
+                {1,2,3,4},
+                {5,6,7,8},
+                {9,8,7,6},
+                {5,4,3,2}
+            };
+            SuperOp a = createSuperOp(1);
+            setSuperOp(a, arr);
+         * ```
          *
          * @param[in,out] op      the SuperOp to overwrite.
          * @param[in]     matrix  a SuperOp::numRows by SuperOp::numRows array.
          * @throws @validationerror
          * - if @p op is uninitialised.
-         * @conly
-         * @macrodoc
-         * 
          * @see
+         * - setSuperOp()
          * - setInlineSuperOp()
          * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) examples
          * @author Tyson Jones
@@ -888,25 +924,77 @@ extern "C" {
 
 
         /** @ingroup channels_setters
-         * @notyetdoced
-         * @macrodoc
          * 
+         * Overwrites the Kraus operators of @p map from an inline literal.
+         * 
+         * The @c {{{matrices}}} argument is a 3D array literal, of dimensions
+         * @c numOps by @c 1<<numQb by @c 1<<numQb.
+         * 
+         * - In @c C, this is a macro, where @p numQb and @p numOps must be 
+         *   compile-time literals, and turn @c {{{matrices}}} into a compound literal.
+         * - In @c C++, this is a function which accepts @c {{{matrices}}} as a nested @c std::vector literal.
+         *
+         * @myexample
+         * 
+         * ```c
+            KrausMap map = createKrausMap(1, 3);
+            setInlineKrausMap(map, 1, 3, {
+                {{1,2},{3,4}},
+                {{5,5},{6,6}},
+                {{1i,2i},{-3i,-4i}}
+            });
+         * ```
+         * 
+         * @param[in,out] map     the KrausMap to overwrite.
+         * @param[in]     numQb   the number of qubits of the literal @c {{{matrices}}}.
+         * @param[in]     numOps  the number of Kraus operators of the literal @c {{{matrices}}}.
+         * @throws @validationerror
+         * - if @p map is uninitialised.
+         * - if @p numQb differs from the number of qubits in @p map.
+         * - if @p numOps differs from the number of operators in @p map.
          * @see
          * - setKrausMap()
          * - syncKrausMap()
-         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) examples
+         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) and
+         *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
+         * @author Tyson Jones
          */
         void setInlineKrausMap(KrausMap map, int numQb, int numOps, {{{ matrices }}});
 
 
         /** @ingroup channels_setters
-         * @notyetdoced
-         * @macrodoc
          * 
+         * Overwrites the elements of @p op from an inline literal.
+         * 
+         * The @c {{matrix}} argument is a 2D array literal, of dimensions
+         * `1<<(2*numQb)` by `1<<(2*numQb)`.
+         * 
+         * - In @c C, this is a macro, where @p numQb must be a compile-time literal, 
+         *   amd turns @c {{matrix}} into a compound literal.
+         * - In @c C++, this is a function which accepts @c {{matrix}} as a nested @c std::vector literal.
+         * 
+         * @myexample
+         * 
+         * ```c
+            SuperOp a = createSuperOp(1);
+            setInlineSuperOp(a, 1, {
+                {1,2,3,4},
+                {5,3.14i,7,8},
+                {9,10,11,12},
+                {13,14,15,16+1.23i}
+            });
+         * ```
+         *
+         * @param[in,out] op     the SuperOp to overwrite.
+         * @param[in]     numQb  the number of qubits of the @c {{matrix}} literal.
+         * @throws @validationerror
+         * - if @p op is uninitialised.
+         * - if @p numQb does not match the number of qubits in @p op.
          * @see
          * - setSuperOp()
          * - syncSuperOp()
          * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) examples
+         * @author Tyson Jones
          */
         void setInlineSuperOp(SuperOp op, int numQb, {{ matrix }});
 
@@ -1008,27 +1096,89 @@ extern "C" {
 
 
         /** @ingroup channels_create
-         * @notyetdoced
-         * @macrodoc
          * 
+         * Creates and initialises a KrausMap from an inline literal.
+         * 
+         * This is a convenience macro which combines createKausMap() and setInlineKrausMap().
+         * 
+         * The @c {{{matrices}}} argument is a 3D array literal, of dimensions
+         * @c numOps by @c 1<<numQb by @c 1<<numQb.
+         * 
+         * - In @c C, this is a macro, where @p numQb and @p numOps must be 
+         *   compile-time literals, and turn @c {{{matrices}}} into a compound literal.
+         * - In @c C++, this is a function which accepts @c {{{matrices}}} as a nested @c std::vector literal.
+         *
+         * The returned KrausMap should be later destroyed with destroyKrausMap().
+         * 
+         * @myexample
+         * 
+         * ```cpp
+            KrausMap map = createInlineKrausMap(1, 3, {
+                {{1,2},{3,4}},
+                {{5,5},{6,6}},
+                {{1i,2i},{-3i,-4i}}
+            });
+         * ```
+         *
+         * @param[in] numQb   the number of qubits acted upon by the Kraus map.
+         * @param[in] numOps  the number of Kraus operators.
+         * @returns A new KrausMap initialised with @p matrices.
+         * @throws @validationerror
+         * - if the QuEST environment is not initialised.
+         * - if @p numQb or @p numOps are invalid.
+         * - if dimensions or memory requirements overflow.
+         * - if any memory allocation fails.
          * @see
          * - createKrausMap()
          * - setKrausMap()
          * - syncKrausMap()
-         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) examples
+         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.c) and
+         *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_krausmaps.cpp) examples
+         * @author Tyson Jones
          */
         KrausMap createInlineKrausMap(int numQb, int numOps, {{{ matrices }}});
 
 
         /** @ingroup channels_create
-         * @notyetdoced
-         * @macrodoc
          * 
+         * Creates and initialises a SuperOp from an inline literal.
+         * 
+         * This is a convenience macro which combines createSuperOp() and setInlineSuperOp().
+         * 
+         * The @c {{matrix}} argument is a 2D array literal, of dimensions
+         * `1<<(2*numQb)` by `1<<(2*numQb)`.
+         * 
+         * - In @c C, this is a macro, where @p numQb must be a compile-time literal, 
+         *   amd turns @c {{matrix}} into a compound literal.
+         * - In @c C++, this is a function which accepts @c {{matrix}} as a nested @c std::vector literal.
+         *
+         * The returned SuperOp should be later destroyed with destroySuperOp().
+         * 
+         * @myexample
+         * 
+         * ```cpp
+            SuperOp op = createInlineSuperOp(1, {
+                {1,2,3,4},
+                {5,6*3.14i,7,8},
+                {9,10,11,12},
+                {13,14,15,16+1.23i}
+            });
+         * ```
+         *
+         * @param[in] numQb  the number of qubits acted upon by the superoperator.
+         * @returns A new SuperOp initialised with @p matrix.
+         * @throws @validationerror
+         * - if the QuEST environment is not initialised.
+         * - if @p numQb is invalid.
+         * - if dimensions or memory requirements overflow.
+         * - if any memory allocation fails.
          * @see
          * - createSuperOp()
          * - setSuperOp()
          * - syncSuperOp()
-         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) examples
+         * - [C](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.c) and
+         *   [C++](https://github.com/QuEST-Kit/QuEST/blob/devel/examples/isolated/initialising_superoperators.cpp) examples
+         * @author Tyson Jones
          */
         SuperOp createInlineSuperOp(int numQb, {{ matrix }});
 
