@@ -422,8 +422,139 @@ void initRandomMixedState(Qureg qureg, qindex numPureStates);
  */
 
 
-/// @notyetdoced
-/// @notyetvalidated
+/** Overwrites a contiguous range of statevector amplitudes.
+ * 
+ * - Amplitudes outside the given range are unchanged.
+ * - There is no validation nor requirement that the new amplitudes,
+ *   together with the remaining original amplitudes, produce a validly
+ *   normalised state. Normalization can be re-established with a subsequent
+ *   call to setQuregToRenormalized().
+ * - When @p qureg is distributed, @p startInd and @p numAmps are treated
+ *   _globally_ and use of this function is ergo agnostic to distribution.
+ *   Therefore, every process should contain identical @p amps, although
+ *   only elements which fall within a process' statevector partition will
+ *   be consulted by a particular process.
+ * - When @p qureg is GPU-accelerated, only its GPU amplitudes are updated.
+ *  
+ * The equivalent function for a density matrix is setDensityQuregAmps().
+ * 
+ * @formulae
+ * 
+ * Let @f$\svpsi=@f$ @p qureg with @f$N@f$ qubits, and with @f$i@f$-th global amplitude @f$\alpha_i@f$.
+ * Let @f$s=@f$ @p startInd, @f$n=@f$ @p numAmps, and let @f$\beta_j@f$ be the @f$j@f$-th element of @p amps. 
+ * 
+ * This function overwrites @p qureg from @f$\svpsi=\sum_{i=0}^{2^N-1} \alpha_i \ket{i}@f$ to
+ * @f[
+        \svpsi \rightarrow 
+            \sum\limits_{i=0}^{s-1} \alpha_i \ket{i} +
+            \sum\limits_{j=0}^{n-1} \beta_j \ket{j + s} +
+            \sum\limits_{i=s+n}^{2^N-1} \alpha_i \ket{i}
+ * @f]
+ * where amplitudes at global indices in @f$[s,s+n)@f$ have been modified.
+ * 
+ * @constraints
+ * 
+ * - Argument @p qureg must be a statevector, and ergo compatible with a 1D range.
+ *   Density matrices can be overwritten at a 2D range with setDensityQuregAmps(),
+ *   or with a 1D contiguous range when flattening the density matrix column-major
+ *   with setDensityQuregFlatAmps(). Alternatively, setQuregAmps() can be called
+ *   with validation disabled via setQuESTValidationOff(), accepting density matrices,
+ *   and behaving identically to setDensityQuregFlatAmps().
+ * 
+ * @equivalences
+ * 
+ * - When @p qureg is **_not_** distributed, this function is equivalent to (but
+ *   much faster than) manual modification of the CPU elements, followed by a copy
+ *   to GPU (_except_ that this function does not modify Qureg::cpuAmps when @p qureg
+ *   is not GPU-accelerated).
+ *   ```cpp
+     for (qindex i=0; i<numAmps; i++)
+         qureg.cpuAmps[i + startInd] = amps[i];
+     syncSubQuregToGpu(qureg, startInd, numAmps); 
+     // beware, syncQuregToGpu() would copy over stale, unmodified CPU amps
+
+     // restore qureg.cpuAmps when !qureg.isGpuAccelerated
+ *   ```
+ * - When @p qureg _is_ distributed, the logic is complicated by the specified global
+ *   range of amplitudes overlapping some, none or all of a node's partition.
+ * 
+ *   ```cpp
+     qcomp* amps[numAmps] = // global
+
+     qindex dim = qureg.numAmpsPerNode;
+     qindex endInd = startInd + numAmps;
+
+     qindex nodeStartInd = (qureg.rank    ) * dim;
+     qindex nodeEndInd   = (qureg.rank + 1) * dim;
+     bool nodeContainsAmps = (startInd < nodeEndInd) && (endInd > nodeStartInd);
+
+     qindex localStartInd = (startInd < nodeStartInd)? 0 : startInd % dim;
+     qindex localEndInd = (endInd > nodeEndInd)? dim : endInd % dim;
+     qindex numLocalAmps = nodeContainsAmps * (localEndInd - localStartInd);
+
+     qindex nodeOffset = nodeStartInd + localStartInd - startInd;
+     for (qindex i=0; i<numLocalAmps; i++)
+         qureg.cpuAmps[localStartInd + i] = amps[nodeOffset + i]
+
+     syncSubQuregToGpu(qureg, localStartInd, numLocalAmps);
+
+     // restore qureg.cpuAmps when !qureg.isGpuAccelerated
+ *   ```
+ * 
+ * @myexample
+ * 
+ * - When @p numAmps is sufficiently small such that the array @p amps can
+ *   fit onto every distributed node, this function can be used in a manner
+ *   totally agnostic to distribution and/or @p qureg deployments.
+ *   ```cpp
+     Qureg qureg = createQureg(35);
+     initBlankState(qureg);
+
+     qcomp amps[1000] = { ... };
+     setQuregAmps(qureg, 300000000, amps, 1000);
+ *   ```
+ * - When @p numAmps is large, one can avoid the superfluous storing of all @p amps
+ *   simultaneously, by repeatedly calling setQuregAmps(), each time passing a tractable
+ *   sub-range, regardless of how @p qureg is distributed.
+ *   ```cpp
+     Qureg qureg = createQureg(35);
+     initBlankState(qureg);
+
+     // global range
+     const qindex startInd = 1234567;
+     const qindex totalNumAmps = 1000000000; // 16  GB worth of double-prec qcomp
+
+     // local memory budget
+     const qindex batchSize = 10000000;   // 160 MB worth
+     qcomp amps[batchSize];
+
+     int numBatches = totalNumAmps / batchSize; // divides evenly here for simplicity
+     
+     for (int batchInd=0; batchInd<numBatches; batchInd++) {
+
+         // update amps, such that amps[i] is the desired amplitude
+         // for global index (startInd + batchInd * batchSize)
+         ...
+
+         setQuregAmps(qureg, startInd + batchInd * batchSize, amps, batchSize);
+     }
+ *   ```
+ *
+ * @param[in,out] qureg     the statevector to modify.
+ * @param[in]     startInd  the first global computational-basis index to overwrite.
+ * @param[in]     amps      an array of @p numAmps amplitudes.
+ * @param[in]     numAmps   the total number of amplitudes to overwrite.
+ * @throws @validationerror
+ * - if @p qureg is uninitialised.
+ * - if @p qureg is not a statevector.
+ * - if @p startInd and @p numAmps describes a range outside @p qureg.
+ * @see
+ * - setDensityQuregAmps()
+ * - setDensityQuregFlatAmps()
+ * - setQuregToWeightedSum()
+ * - setQuregToRenormalized()
+ * @author Tyson Jones
+ */
 void setQuregAmps(Qureg qureg, qindex startInd, qcomp* amps, qindex numAmps);
 
 
