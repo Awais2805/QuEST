@@ -45,25 +45,68 @@ extern "C" {
  * This is not a physical quantum state, but is useful as a blank
  * workspace before manually setting amplitudes.
  * 
+ * > [!CAUTION]
+ * > When @p qureg is GPU-accelerated, this function modifies only its GPU
+ * > amplitudes (Qureg::gpuAmps), leaving its CPU amps (Qureg::cpuAmps)
+ * > unchanged (like almost all QuEST operations). It is therefore necessary
+ * > to follow this function with syncQuregFromGpu() in order to make 
+ * > further, manual changes from the host side.
+ * 
  * @equivalences
  * 
  * - This function is equivalent to (but much faster than) overwriting every
- *   amplitude to zero.
+ *   amplitude to zero, _except_ that it does not modify Qureg::cpuAmps.
  *   ```cpp
      for (int i=0; i<qureg.numAmpsPerNode; i++)
          qureg.cpuAmps[i] = 0;
-     syncQureg(qureg);
+     syncQuregToGpu(qureg);
+
+     // restore qureg.cpuAmps when !qureg.isGpuAccelerated
  *   ```
+ *
+ * @myexample
+ * 
+ * This function is useful for preparing sparse states, noting we must
+ * explicitly copy the newly-zeroed amplitudes from GPU memory, when
+ * @p qureg is GPU-accelerated (though such functions are always safe
+ * to call).
+ * 
+ * ```cpp
+   initBlankState(qureg);
+   syncQuregFromGpu(qureg);
+   
+   // manually modify qureg.cpuAmps in some manner that wouldn't
+   // be more sensible to perform with setQuregAmps, such as to a
+   // uniform superposition of random basis states
+   for (qindex i=0; i<500; i++) {
+       qindex j = rand % qureg.numAmpsPerNode;
+       qureg.cpuAmps[j] = 1;
+   }
+
+   syncQuregToGpu(qureg);
+   setQuregToRenormalized();
+ * ```
  *
  * @param[in,out] qureg  the Qureg to overwrite.
  * @throws @validationerror
  * - if @p qureg is uninitialised.
+ * @see
+ * - setQuregAmps()
+ * - initZeroState()
+ * - initClassicalState()
+ * - initPlusState()
+ * - initRandomPureState()
  * @author Tyson Jones
  */
 void initBlankState(Qureg qureg);
 
 
 /** Initialises @p qureg to the zero computational basis state.
+ * 
+ * > [!NOTE]
+ * > Like most of QuEST's API, this function leaves Qureg::cpuAmps unchanged when
+ * > @p qureg is GPU-accelerated, overwriting only the relevant GPU buffer Qureg::gpuAmps.
+ * > See initBlankState() for more information.
  * 
  * @formulae
  *
@@ -79,11 +122,15 @@ void initBlankState(Qureg qureg);
      initClassicalState(qureg, 0);
  *   ```
  * - The zero state has a zero amplitude everywhere except at the first index, which has one.
+ *   The code below is equivalent to this function, _except_ Qureg::cpuAmps are also modified
+ *   below, whereas initZeroState() leaves them unchanged when @p qureg is GPU-accelerated.
  *   ```cpp
      initBlankState(qureg);
      if (qureg.rank == 0)
          qureg.cpuAmps[0] = 1;
      syncQureg(qureg);
+     
+     // restore qureg.cpuAmps when !qureg.isGpuAccelerated
  *   ```
  *
  * @param[in,out] qureg  the Qureg to overwrite.
@@ -95,6 +142,11 @@ void initZeroState(Qureg qureg);
 
 
 /** Initialises @p qureg to the uniform plus state.
+ * 
+ * > [!NOTE]
+ * > Like most of QuEST's API, this function leaves Qureg::cpuAmps unchanged when
+ * > @p qureg is GPU-accelerated, overwriting only the relevant GPU buffer Qureg::gpuAmps.
+ * > See initBlankState() for more information.
  * 
  * @formulae
  *
@@ -134,6 +186,11 @@ void initPlusState(Qureg qureg);
 
 /** Initialises @p qureg to the state in statevector @p pure.
  * 
+ * > [!NOTE]
+ * > Like most of QuEST's API, this function leaves Qureg::cpuAmps unchanged when
+ * > @p qureg is GPU-accelerated, overwriting only the relevant GPU buffer Qureg::gpuAmps.
+ * > See initBlankState() for more information.
+ * 
  * @formulae
  * 
  * Let @f$N@f$ be the number of qubits in @p qureg or @p pure, and let @f$\ket{\psi} = @f$ @p pure,
@@ -171,6 +228,11 @@ void initPureState(Qureg qureg, Qureg pure);
 
 /** Initialises @p qureg to a computational basis state.
  * 
+ * > [!NOTE]
+ * > Like most of QuEST's API, this function leaves Qureg::cpuAmps unchanged when
+ * > @p qureg is GPU-accelerated, overwriting only the relevant GPU buffer Qureg::gpuAmps.
+ * > See initBlankState() for more information.
+ * 
  * @formulae
  * 
  * Let @f$N@f$ be the number of qubits in @p qureg, and let @f$i=@f$ @p stateInd.
@@ -186,16 +248,26 @@ void initPureState(Qureg qureg, Qureg pure);
  *
  * @equivalences
  * 
- * - The resulting state contains zero for all amplitudes except that at index @f$i@f$
+ * - The resulting state contains zero for all amplitudes except that at global index @f$i@f$
  *   (when @p qureg is a statevector) or the @f$i@f$-th diagonal (when @p qureg is a
  *   density matrix).
  *   ```cpp
-     // when non-distributed, for simplicity
      initBlankState(qureg);
-     qindex d = 1 + (1 << qureg.numQubits);
-     qindex i = stateInd * (qureg.isDensityMatrix? d : 1);
-     qureg.cpuAmps[i] = 1;
-     syncQureg(qureg);
+
+     // determine where the single, global amp to modify is located
+     qindex numNewAmps = 1;
+     qindex densityDim = 1 + (1 << qureg.numQubits);
+     qindex globalAmpInd = stateInd * (qureg.isDensityMatrix? densityDim : 1);
+     qindex localAmpInd = globalAmpInd % qureg.numAmpsPerNode;
+     int rankContainingAmp = i / qureg.numAmpsPerNode;
+     bool isAmpInThisNode = (rankContainingAmp == qureg.rank);
+
+     // one node modifies 1 CPU amp
+     if (isAmpInThisNode)
+         qureg.cpuAmps[localAmpInd] = 1;
+     
+     // all nodes sync to GPU but only one node specifies a more than zero amps 
+     syncSubQuregToGpu(qureg, i, numNewAmps * isAmpInThisNode);
  *   ```
  * - The resulting state can be (pointlessly slowly) produced by qubit flips from the
  *   zero state, according to the bits in @p stateInd.
@@ -225,7 +297,15 @@ void initClassicalState(Qureg qureg, qindex stateInd);
  * @f]
  * even if @p qureg is a density matrix, in which case it is enumerated
  * column-major.
- 
+ * 
+ * > [!CAUTION]
+ * > When @p qureg is GPU-accelerated, this function modifies only its GPU
+ * > amplitudes (Qureg::gpuAmps), leaving its CPU amps (Qureg::cpuAmps)
+ * > unchanged (like almost all QuEST operations). It is therefore necessary
+ * > to follow this function with syncQuregFromGpu() in order to make 
+ * > further, manual changes from the host side. See initBlankState() for more
+ * > information.
+ *
  * @myexample
  * 
  * ```cpp
